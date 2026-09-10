@@ -1,0 +1,130 @@
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          email: string;
+          role: 'student' | 'teacher' | 'engineer' | 'admin';
+          first_name: string;
+          last_name: string;
+          phone: string;
+          title: string;
+          bio: string;
+          avatar_url: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          email: string;
+          role: 'student' | 'teacher' | 'engineer' | 'admin';
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+      students: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          student_code: string;
+          first_name: string;
+          last_name: string;
+          gender: 'male' | 'female' | 'other';
+          grade: string;
+          section: string;
+          guardian_name: string;
+          guardian_phone: string;
+          address: string;
+          birth_date: string | null;
+          enrolled_at: string;
+          math_score: number;
+          logic_score: number;
+          language_score: number;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          user_id: string | null;
+          first_name: string;
+          last_name: string;
+          gender: string;
+          grade: string;
+          section: string;
+          guardian_name: string;
+          guardian_phone: string;
+          address: string;
+          birth_date: string | null;
+          enrolled_at: string;
+          math_score: number;
+          logic_score: number;
+          language_score: number;
+          notes: string;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+      attendance: {
+        Row: {
+          id: string;
+          student_id: string;
+          date: string;
+          status: 'present' | 'absent' | 'excused' | 'late';
+          note: string;
+          recorded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          student_id: string;
+          date: string;
+          status: string;
+          note: string;
+          recorded_by: string | null;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+      messages: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          country: string;
+          role: string;
+          subject: string;
+          message: string;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          name: string;
+          email: string;
+          country: string;
+          role: string;
+          subject: string;
+          message: string;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+    };
+    Functions: {
+      current_role: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      is_staff: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+    };
+  };
+};

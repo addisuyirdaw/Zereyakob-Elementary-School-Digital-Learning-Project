@@ -1,0 +1,392 @@
+export type Lang = "en" | "am";
+
+type Entry = { en: string; am: string };
+
+export const translations: Record<string, Entry> = {
+  // ── Language ──────────────────────────────────────────────────────────────
+  "lang.label": { en: "Language", am: "ቋንቋ" },
+
+  // ── Brand ─────────────────────────────────────────────────────────────────
+  "brand.name": { en: "Zereyakob Elementary", am: "ዘረያቆብ አንደኛ ደረጃ ትምህርት ቤት" },
+  "brand.short": { en: "Zereyakob", am: "ዘረያቆብ" },
+  "brand.tagline": {
+    en: "Digital Learning Platform",
+    am: "የዲጂታል ትምህርት መድረክ",
+  },
+  "brand.partner": {
+    en: "Debre Berhan University",
+    am: "ደብረ ብርሃን ዩኒቨርሲቲ",
+  },
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  "nav.home": { en: "Home", am: "መነሻ" },
+  "nav.about": { en: "About", am: "ስለ እኛ" },
+  "nav.contact": { en: "Contact", am: "አግኙን" },
+  "nav.dashboard": { en: "Dashboard", am: "ዳሽቦርድ" },
+  "nav.signIn": { en: "Sign in", am: "ግባ" },
+  "nav.signUp": { en: "Get started", am: "ይጀምሩ" },
+  "nav.signOut": { en: "Sign out", am: "ውጣ" },
+
+  // ── Common ────────────────────────────────────────────────────────────────
+  "common.save": { en: "Save", am: "አስቀምጥ" },
+  "common.saving": { en: "Saving…", am: "በማስቀመጥ ላይ…" },
+  "common.cancel": { en: "Cancel", am: "ሰርዝ" },
+  "common.delete": { en: "Delete", am: "አጥፋ" },
+  "common.deleteConfirm": { en: "Delete forever", am: "በእርግጠኝነት አጥፋ" },
+  "common.edit": { en: "Edit", am: "አርትዕ" },
+  "common.add": { en: "Add", am: "ጨምር" },
+  "common.search": { en: "Search", am: "ፈልግ" },
+  "common.loading": { en: "Loading…", am: "በመጫን ላይ…" },
+  "common.error": { en: "Something went wrong", am: "አንድ ስህተት ተከስቷል" },
+  "common.submit": { en: "Submit", am: "አስገባ" },
+  "common.back": { en: "Back", am: "ተመለስ" },
+  "common.view": { en: "View", am: "ይመልከቱ" },
+  "common.details": { en: "Details", am: "ዝርዝር" },
+  "common.actions": { en: "Actions", am: "ተግባራት" },
+  "common.all": { en: "All", am: "ሁሉም" },
+  "common.none": { en: "None", am: "የለም" },
+  "common.close": { en: "Close", am: "ዝጋ" },
+  "common.confirm": { en: "Confirm", am: "አረጋግጥ" },
+  "common.total": { en: "Total", am: "ጠቅላላ" },
+  "common.select": { en: "Select…", am: "ይምረጡ…" },
+  "common.allStudents": { en: "All students", am: "ሁሉም ተማሪዎች" },
+  "common.export": { en: "Export", am: "አውርድ" },
+  "common.noData": { en: "No data yet", am: "እስካሁን ምንም መረጃ የለም" },
+  "common.today": { en: "today", am: "ዛሬ" },
+  "common.male": { en: "Male", am: "ወንድ" },
+  "common.female": { en: "Female", am: "ሴት" },
+  "common.other": { en: "Other", am: "ሌላ" },
+  "common.optional": { en: "optional", am: "አማራጭ" },
+  "common.required": { en: "required", am: "ያስፈልጋል" },
+
+  // ── Roles ─────────────────────────────────────────────────────────────────
+  "role.student": { en: "Student", am: "ተማሪ" },
+  "role.teacher": { en: "Teacher", am: "መምህር" },
+  "role.engineer": { en: "Engineer", am: "መሀንድስ" },
+  "role.admin": { en: "Super Admin", am: "ሱፐር አስተዳዳሪ" },
+  "role.team": { en: "Core Team", am: "ዋና ቡድን" },
+
+  // ── Landing ───────────────────────────────────────────────────────────────
+  "landing.badge": {
+    en: "Proudly supported by Debre Berhan University",
+    am: "በደብረ ብርሃን ዩኒቨርሲቲ በኩራት የተደገፈ",
+  },
+  "landing.title": {
+    en: "Empowering young minds at Zereyakob Elementary",
+    am: "የወጣቶችን አእምሮ በዘረያቆብ አንደኛ ደረጃ ትምህርት ቤት ማብቃት",
+  },
+  "landing.subtitle": {
+    en: "A production digital learning platform for students, teachers and partners — real attendance, live performance tracking and transparent reports for the whole school.",
+    am: "በአስተማሪዎች፣ በተማሪዎች እና በአጋሮች ለሚተዳደረው ትምህርት ቤት ዘመናዊ የዲጂታል ትምህርት መድረክ — እውነተኛ የመገኘት ምዝገባ፣ የቀጥታ የእድገት ክትትል እና ግልጽ ሪፖርቶች።",
+  },
+  "landing.cta": { en: "Open dashboard", am: "ዳሽቦርድ ክፈት" },
+  "landing.learnMore": { en: "Learn more", am: "ተጨማሪ ይወቁ" },
+  "landing.stats.title": { en: "Our school in numbers", am: "ትምህርት ቤታችን በቁጥር" },
+  "landing.stats.students": { en: "Enrolled students", am: "የተመዘገቡ ተማሪዎች" },
+  "landing.stats.teachers": { en: "Dedicated teachers", am: "ጠዋትና ማታ የሚሰሩ መምህራን" },
+  "landing.stats.team": { en: "Core team members", am: "ዋና የቡድን አባላት" },
+  "landing.partnership.title": {
+    en: "A university-grade partnership",
+    am: "የዩኒቨርሲቲ ደረጃ አጋርነት",
+  },
+  "landing.partnership.desc": {
+    en: "Debre Berhan University backs Zereyakob Elementary with research, technology and teacher training — ensuring every child learns on world-class tools.",
+    am: "ደብረ ብርሃን ዩኒቨርሲቲ በምርምር፣ በቴክኖሎጂ እና በመምህራን ስልጠና ዘረያቆብ አንደኛ ደረጃ ትምህርት ቤትን ይደግፋል — እያንዳንዱ ልጅ በዓለም ደረጃ በታወቁ መሳሪያዎች መማሩን ያረጋግጣል።",
+  },
+  "landing.partnership.more": {
+    en: "Discover the partnership →",
+    am: "አጋርነቱን ይመልከቱ →",
+  },
+  "landing.features.title": {
+    en: "Everything a modern school needs",
+    am: "ዘመናዊ ትምህርት ቤት የሚፈልገው ሁሉ",
+  },
+  "landing.features.attendance.title": { en: "Daily attendance", am: "የዕለት መገኘት" },
+  "landing.features.attendance.desc": {
+    en: "Track Present, Absent, Late and Excused each day with automatic duplicate prevention and live rates.",
+    am: "በየቀኑ ተገኝቷል፣ አልተገኘም፣ ዘግይቷል እና በፍቃድ የተቀረ መረጃን ያዝ — ድግግሞሽን በራስ-ሰር በመከላከል እና ቀጥታ መጠን በማሳየት።",
+  },
+  "landing.features.performance.title": { en: "Performance analytics", am: "የእድገት ትንተና" },
+  "landing.features.performance.desc": {
+    en: "Realtime subject progress in math, logic and language rendered as interactive charts for each learner.",
+    am: "ለእያንዳንዱ ተማሪ ሒሳብ፣ አመክንዮ እና ቋንቋ ላይ ያለው እድገት በተግባቢ ገበታዎች ይታያል።",
+  },
+  "landing.features.reports.title": { en: "Reports & export", am: "ሪፖርት እና ማውጣት" },
+  "landing.features.reports.desc": {
+    en: "One-click CSV downloads of the directory and attendance reports for stakeholders and funders.",
+    am: "የማውጫ እና የመገኘት ሪፖርቶችን ለባለድርሻ አካላት በአንድ ጠቅታ እንደ CSV ያውርዱ።",
+  },
+  "landing.features.bilingual.title": { en: "Amharic & English", am: "አማርኛ እና እንግሊዝኛ" },
+  "landing.features.bilingual.desc": {
+    en: "Every page, form and report switches languages seamlessly — because learning happens in your language.",
+    am: "እያንዳንዱ ገጽ፣ ቅጽ እና ሪፖርት በቀላሉ ቋንቋ ይቀያየራል — ምክንያቱም ትምህርት በእናት ቋንቋ ይከናወናል።",
+  },
+  "landing.features.secure.title": { en: "Secure by design", am: "በንድፍ ደህንነቱ የተጠበቀ" },
+  "landing.features.secure.desc": {
+    en: "Role-based access control and database-level row security keep every learner's record private.",
+    am: "በሚና ላይ የተመሰረተ የመዳረሻ ቁጥጥር እና የመረጃ ደህንነት የእያንዳንዱን ተማሪ መረጃ በሚስጥር ይጠብቃል።",
+  },
+  "landing.features.support.title": { en: "Global partnerships", am: "ዓለም አቀፍ አጋርነት" },
+  "landing.features.support.desc": {
+    en: "An open funding and outreach portal welcomes supporters from the United States, the Netherlands and beyond.",
+    am: "ከአሜሪካ፣ ከኔዘርላንድ እና ከሌሎች ሀገራት ድጋፍ ሰጪዎችን የሚቀበል ክፍት የድጋፍ እና የግንኙነት መግቢያ።",
+  },
+
+  // ── About ─────────────────────────────────────────────────────────────────
+  "about.title": { en: "About the school", am: "ስለ ትምህርት ቤቱ" },
+  "about.mission.title": { en: "Our mission", am: "ተልዕኳችን" },
+  "about.mission.desc": {
+    en: "To give every Zereyakob child a joyful, rigorous and technology-enabled primary education that builds confident, curious citizens — guided by research from Debre Berhan University.",
+    am: "ለእያንዳንዱ የዘረያቆብ ልጅ በደብረ ብርሃን ዩኒቨርሲቲ ምርምር የሚመራ ደስታና ጥራት ያለው፣ በቴክኖሎጂ የታገዘ የአንደኛ ደረጃ ትምህርት መስጠት በራስ የመተማመንና የማወቅ ጉጉት ያላቸው ዜጎችን ማፍራት ነው።",
+  },
+  "about.team.title": { en: "Core team", am: "ዋና ቡድን" },
+  "about.team.member.admin": { en: "School Founder & Super Admin", am: "የትምህርት ቤት መስራች እና ሱፐር አድሚን" },
+  "about.team.member.engineer": { en: "Lead Learning Engineer", am: "ዋና የትምህርት መሀንድስ" },
+  "about.team.member.researcher1": {
+    en: "Researcher — Education Technology",
+    am: "ተመራማሪ — የትምህርት ቴክኖሎጂ",
+  },
+  "about.team.member.researcher2": {
+    en: "Researcher — Child Development",
+    am: "ተመራማሪ — የልጆች እድገት",
+  },
+  "about.team.member.researcher3": {
+    en: "Researcher — Curriculum & Assessment",
+    am: "ተመራማሪ — ሥርዓተ ትምህርት እና ግምገማ",
+  },
+  "about.teachers": { en: "Our teachers", am: "መምህራኖቻችን" },
+  "about.teachers.desc": {
+    en: "Three dedicated teachers guide classrooms every day, keeping learning personal and warm.",
+    am: "ሦስት ጠንካራ መምህራን በየቀኑ ክፍሎችን እየመሩ ትምህርቱን ግላዊ እና ሞቅ ያለ ያደርጉታል።",
+  },
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  "auth.signInTitle": { en: "Welcome back", am: "እንኳን ወደ ቀድሞው ተመልሰዋል" },
+  "auth.signInSub": {
+    en: "Sign in to your school account.",
+    am: "ወደ ት/ቤት መለያዎ ይግቡ።",
+  },
+  "auth.signUpTitle": { en: "Create your school account", am: "የት/ቤት መለያ ይፍጠሩ" },
+  "auth.signUpSub": {
+    en: "New accounts start as Students until the Super Admin assigns a role.",
+    am: "አዲስ መለያዎች ሱፐር አድሚኑ ሚና እስኪመድቡ ድረስ በተማሪ ይጀምራሉ።",
+  },
+  "auth.firstName": { en: "First name", am: "የመጀመሪያ ስም" },
+  "auth.lastName": { en: "Last name", am: "የአያት ስም" },
+  "auth.email": { en: "Email", am: "ኢሜይል" },
+  "auth.password": { en: "Password", am: "የይለፍ ቃል" },
+  "auth.google": { en: "Continue with Google", am: "በGoogle ይቀጥሉ" },
+  "auth.or": { en: "or", am: "ወይም" },
+  "auth.signIn": { en: "Sign in", am: "ግባ" },
+  "auth.signUp": { en: "Create account", am: "መለያ ፍጠር" },
+  "auth.noAccount": { en: "Don't have an account?", am: "መለያ የለዎትም?" },
+  "auth.hasAccount": { en: "Already have an account?", am: "መለያ አለዎት?" },
+  "auth.forgot": { en: "Forgot password?", am: "የይለፍ ቃል ረሱት?" },
+  "auth.resetSent": {
+    en: "If that email exists, a reset link has been sent.",
+    am: "ያ ኢሜይል ካለ፣ የመቀየሪያ አገናኝ ተልኳል።",
+  },
+  "auth.err.emailInvalid": { en: "Please enter a valid email", am: "እባክዎ ትክክለኛ ኢሜይል ያስገቡ" },
+  "auth.err.passwordShort": {
+    en: "Password must be at least 8 characters",
+    am: "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
+  },
+  "auth.err.mismatch": { en: "Passwords do not match", am: "የይለፍ ቃላት አይዛመዱም" },
+  "auth.err.unknown": {
+    en: "Sign-in failed. Please try again.",
+    am: "መግባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+  },
+
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  "dash.overview": { en: "Overview", am: "አጠቃላይ እይታ" },
+  "dash.students": { en: "Students", am: "ተማሪዎች" },
+  "dash.attendance": { en: "Attendance", am: "መገኘት" },
+  "dash.directory": { en: "Directory", am: "ማውጫ" },
+  "dash.reports": { en: "Reports", am: "ሪፖርቶች" },
+  "dash.support": { en: "Support & Contact", am: "ድጋፍ እና ግንኙነት" },
+  "dash.profile": { en: "My profile", am: "የእኔ መገለጫ" },
+  "dash.welcome": { en: "Welcome back", am: "እንኳን ደህና መጡ" },
+  "dash.subtitle": {
+    en: "Here is what is happening at Zereyakob today.",
+    am: "ዛሬ በዘረያቆብ ምን እየተከሰተ እንዳለ ይኸውና።",
+  },
+  "dash.totalStudents": { en: "Total students", am: "ጠቅላላ ተማሪዎች" },
+  "dash.totalTeachers": { en: "Teachers", am: "መምህራን" },
+  "dash.todaysAttendance": { en: "Today's attendance", am: "የዛሬ መገኘት" },
+  "dash.avgScores": { en: "Average scores", am: "አማካይ ውጤቶች" },
+  "dash.recent": { en: "Recent attendance", am: "የቅርብ መገኘት" },
+  "dash.quickActions": { en: "Quick actions", am: "ፈጣን ተግባራት" },
+  "dash.recordAttendance": { en: "Record attendance", am: "መገኘት ይመዝገብ" },
+  "dash.addStudent": { en: "Add a student", am: "ተማሪ ጨምር" },
+  "dash.manageSupport": { en: "View support requests", am: "የድጋፍ ጥያቄዎችን ይመልከቱ" },
+  "dash.notRecorded": { en: "Not recorded yet", am: "እስካሁን አልተመዘገበም" },
+  "dash.math": { en: "Math", am: "ሒሳብ" },
+  "dash.logic": { en: "Logic", am: "አመክንዮ" },
+  "dash.language": { en: "Language", am: "ቋንቋ" },
+
+  // ── Students ──────────────────────────────────────────────────────────────
+  "stu.title": { en: "Student records", am: "የተማሪ መረጃዎች" },
+  "stu.subtitle": {
+    en: "Manage profiles, scores and notes for all Zereyakob learners.",
+    am: "የሁሉንም የዘረያቆብ ተማሪዎች መረጃ፣ ውጤት እና ማስታወሻ ያስተዳድሩ።",
+  },
+  "stu.add": { en: "Add student", am: "ተማሪ ጨምር" },
+  "stu.edit": { en: "Edit student", am: "ተማሪ አርትዕ" },
+  "stu.info": { en: "Student information", am: "የተማሪ መረጃ" },
+  "stu.perfTitle": { en: "Performance", am: "የትምህርት እድገት" },
+  "stu.perfDesc": {
+    en: "Live scores in math, logic and language (0–100).",
+    am: "በሒሳብ፣ አመክንዮ እና ቋንቋ የቀጥታ ውጤቶች (0–100)።",
+  },
+  "stu.firstName": { en: "First name", am: "የመጀመሪያ ስም" },
+  "stu.lastName": { en: "Last name", am: "የአያት ስም" },
+  "stu.gender": { en: "Gender", am: "ጾታ" },
+  "stu.grade": { en: "Grade", am: "ክፍል" },
+  "stu.section": { en: "Section", am: "ሴክሽን" },
+  "stu.code": { en: "Student ID", am: "የተማሪ መለያ" },
+  "stu.guardian": { en: "Guardian", am: "ባለአደራ" },
+  "stu.guardianPhone": { en: "Guardian phone", am: "የባለአደራ ስልክ" },
+  "stu.address": { en: "Address", am: "አድራሻ" },
+  "stu.birthDate": { en: "Birth date", am: "የትውልድ ቀን" },
+  "stu.enrolledAt": { en: "Enrolled", am: "የተመዘገቡበት ቀን" },
+  "stu.notes": { en: "Notes", am: "ማስታወሻ" },
+  "stu.math": { en: "Math score", am: "የሒሳብ ውጤት" },
+  "stu.logic": { en: "Logic score", am: "የአመክንዮ ውጤት" },
+  "stu.language": { en: "Language score", am: "የቋንቋ ውጤት" },
+  "stu.grade.all": { en: "All grades", am: "ሁሉም ክፍሎች" },
+  "stu.deleted": { en: "Student deleted", am: "ተማሪ ተሰርዟል" },
+  "stu.saved": { en: "Student saved", am: "የተማሪ መረጃ ተቀምጧል" },
+  "stu.attendanceRate": { en: "Attendance rate", am: "የመገኘት መጠን" },
+  "stu.backToStudents": { en: "Back to students", am: "ወደ ተማሪዎች ተመለስ" },
+  "stu.overview": { en: "Overview", am: "አጠቃላይ" },
+
+  // ── Attendance ────────────────────────────────────────────────────────────
+  "att.title": { en: "Attendance", am: "የመገኘት ምዝገባ" },
+  "att.subtitle": {
+    en: "Record today's attendance. Each student can only have one status per day.",
+    am: "የዛሬውን መገኘት ይመዝግቡ። እያንዳንዱ ተማሪ በቀን አንድ ሁኔታ ብቻ ይኖረዋል።",
+  },
+  "att.date": { en: "Date", am: "ቀን" },
+  "att.student": { en: "Student", am: "ተማሪ" },
+  "att.status": { en: "Status", am: "ሁኔታ" },
+  "att.present": { en: "Present", am: "ተገኝቷል" },
+  "att.absent": { en: "Absent", am: "አልተገኘም" },
+  "att.late": { en: "Late", am: "ዘግይቷል" },
+  "att.excused": { en: "Excused", am: "በፍቃድ" },
+  "att.rate": { en: "Attendance rate", am: "የመገኘት መጠን" },
+  "att.presentCount": { en: "Present", am: "ተገኝቷል" },
+  "att.saved": { en: "Attendance saved", am: "መገኘት ተመዝግቧል" },
+  "att.updated": { en: "Attendance updated", am: "መገኘት ተሻሽሏል" },
+  "att.saveAll": { en: "Save attendance", am: "መገኘት አስቀምጥ" },
+  "att.markAll": { en: "Mark all", am: "ሁሉን ምልክት አድርግ" },
+  "att.recorded": { en: "recorded", am: "የተመዘገበ" },
+  "att.duplicate": {
+    en: "A duplicate record was prevented",
+    am: "ድግግሞሽ እንዳይኖር ተከላክሏል",
+  },
+  "att.preview": { en: "Daily overview", am: "የቀኑ አጠቃላይ እይታ" },
+
+  // ── Directory ─────────────────────────────────────────────────────────────
+  "dir.title": { en: "Directory", am: "ማውጫ" },
+  "dir.subtitle": {
+    en: "The complete staff and student directory with one-click CSV export.",
+    am: "ሙሉ የመምህራን፣ የሰራተኞች እና የተማሪዎች ማውጫ የCSV አውርድ ጋር።",
+  },
+  "dir.exportCsv": { en: "Export CSV", am: "CSV አውርድ" },
+  "dir.exportAtt": {
+    en: "Export attendance report",
+    am: "የመገኘት ሪፖርት አውርድ",
+  },
+  "dir.exported": { en: "File downloaded", am: "ፋይል ተወርዷል" },
+  "dir.filterByRole": { en: "Filter by role", am: "በሚና አጣራ" },
+
+  // ── Reports ───────────────────────────────────────────────────────────────
+  "rep.title": { en: "Reports", am: "ሪፖርቶች" },
+  "rep.subtitle": {
+    en: "Generate and download attendance reports for any date range.",
+    am: "ለማንኛውም የቀን ጊዜ የመገኘት ሪፖርት ይፍጠሩ እና ያውርዱ።",
+  },
+  "rep.from": { en: "From", am: "ከ" },
+  "rep.to": { en: "To", am: "እስከ" },
+  "rep.generate": { en: "Generate", am: "አመንጭ" },
+  "rep.download": { en: "Download CSV", am: "CSV አውርድ" },
+  "rep.date": { en: "Date", am: "ቀን" },
+  "rep.present": { en: "Present", am: "ተገኝቷል" },
+  "rep.absent": { en: "Absent", am: "አልተገኘም" },
+  "rep.late": { en: "Late", am: "ዘግይቷል" },
+  "rep.excused": { en: "Excused", am: "በፍቃድ" },
+  "rep.noData": {
+    en: "No attendance in this range yet.",
+    am: "በዚህ ጊዜ ውስጥ እስካሁን መገኘት የለም።",
+  },
+  "rep.summary": { en: "Summary", am: "ማጠቃለያ" },
+  "rep.tooltip": { en: "records this day", am: "መዝገቦች በዚህ ቀን" },
+
+  // ── Support ───────────────────────────────────────────────────────────────
+  "sup.title": { en: "Support & Partnerships", am: "ድጋፍ እና አጋርነት" },
+  "sup.subtitle": {
+    en: "From America to the Netherlands — every supporter helps a Zereyakob child learn.",
+    am: "ከአሜሪካ እስከ ኔዘርላንድ — እያንዳንዱ ድጋፍ ሰጪ የዘረያቆብ ልጅ እንዲማር ይረዳል።",
+  },
+  "sup.funding.title": { en: "Open funding portal", am: "ክፍት የድጋፍ መግቢያ" },
+  "sup.funding.desc": {
+    en: "Support classrooms, technology and meals for 15 students. Every contribution is tracked and reported transparently.",
+    am: "ለ15 ተማሪዎች የመማሪያ ክፍሎች፣ ቴክኖሎጂ እና ምግብ ይደግፉ። እያንዳንዱ መዋጮ በግልጽ ይከታተላል እና ሪፖርት ይደረጋል።",
+  },
+  "sup.funding.cta": { en: "Start a contribution", am: "መዋጮ ይጀምሩ" },
+  "sup.contact.title": { en: "Contact us", am: "ያግኙን" },
+  "sup.contact.desc": {
+    en: "Fill in the outreach form and the core team will reply within two days.",
+    am: "የግንኙነት ቅጹን ይሙሉ — ዋና ቡድኑ በሁለት ቀናት ውስጥ ይመልሳል።",
+  },
+  "sup.name": { en: "Full name", am: "ሙሉ ስም" },
+  "sup.email": { en: "Email", am: "ኢሜይል" },
+  "sup.country": { en: "Country", am: "ሀገር" },
+  "sup.role": { en: "Your role", am: "የእርስዎ ሚና" },
+  "sup.role.supporter": { en: "Supporter", am: "ድጋፍ ሰጪ" },
+  "sup.role.partner": { en: "Partner institution", am: "የአጋር ተቋም" },
+  "sup.role.media": { en: "Press / Media", am: "ፕሬስ / ሚዲያ" },
+  "sup.role.government": { en: "Government", am: "መንግስት" },
+  "sup.role.other": { en: "Other", am: "ሌላ" },
+  "sup.subject": { en: "Subject", am: "ርዕስ" },
+  "sup.message": { en: "Message", am: "መልዕክት" },
+  "sup.sent": { en: "Message sent — thank you!", am: "መልዕክት ተልኳል — እናመሰግናለን!" },
+  "sup.submit": { en: "Send message", am: "መልዕክት ላክ" },
+  "sup.placeholder.name": { en: "Jane Doe", am: "አሌም ከበደ" },
+  "sup.placeholder.country": { en: "United States", am: "አሜሪካ" },
+  "sup.inbox": { en: "Inbox", am: "መልዕክት ሳጥን" },
+  "sup.saved.messages": { en: "Support messages", am: "የድጋፍ መልዕክቶች" },
+
+  // ── Profile ───────────────────────────────────────────────────────────────
+  "profile.title": { en: "My profile", am: "የእኔ መገለጫ" },
+  "profile.subtitle": {
+    en: "Manage your account details and password.",
+    am: "የመለያዎ ዝርዝሮች እና የይለፍ ቃል ያስተዳድሩ።",
+  },
+  "profile.personal": { en: "Personal information", am: "የግል መረጃ" },
+  "profile.firstName": { en: "First name", am: "የመጀመሪያ ስም" },
+  "profile.lastName": { en: "Last name", am: "የአያት ስም" },
+  "profile.phone": { en: "Phone", am: "ስልክ" },
+  "profile.titleField": { en: "Job title", am: "የስራ ማዕረግ" },
+  "profile.bio": { en: "Short bio", am: "አጭር መገለጫ" },
+  "profile.email": { en: "Email", am: "ኢሜይል" },
+  "profile.role": { en: "Role", am: "ሚና" },
+  "profile.saved": { en: "Profile saved", am: "መገለጫ ተቀምጧል" },
+  "profile.password.title": { en: "Change password", am: "የይለፍ ቃል ቀይር" },
+  "profile.password.desc": {
+    en: "Use a strong password you do not reuse elsewhere.",
+    am: "ሌላ ቦታ የማይጠቀሙበት ጠንካራ የይለፍ ቃል ይጠቀሙ።",
+  },
+  "profile.password.new": { en: "New password", am: "አዲስ የይለፍ ቃል" },
+  "profile.password.confirm": { en: "Confirm new password", am: "አዲሱን የይለፍ ቃል ያረጋግጡ" },
+  "profile.password.changed": { en: "Password changed", am: "የይለፍ ቃል ተቀይሯል" },
+  "profile.memberSince": { en: "Member since", am: "አባል የሆኑበት ቀን" },
+
+  // ── 404 ───────────────────────────────────────────────────────────────────
+  "404.title": { en: "Page not found", am: "ገጽ አልተገኘም" },
+  "404.desc": {
+    en: "The page you are looking for does not exist.",
+    am: "የሚፈልጉት ገጽ የለም።",
+  },
+  "404.home": { en: "Go home", am: "ወደ መነሻ ይሂዱ" },
+};
