@@ -171,9 +171,16 @@ export default function StaffPage() {
                       </span>
                     )}
                     <div>
-                      <p className="font-bold text-slate-900">
-                        {[member.first_name, member.last_name].filter(Boolean).join(" ") || "—"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-900">
+                          {[member.first_name, member.last_name].filter(Boolean).join(" ") || "—"}
+                        </p>
+                        {member.is_public && (
+                          <Badge tone="amber" className="px-1.5 py-0 text-[10px]">
+                            {t("sf.public")}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-400 md:hidden">{member.email}</p>
                     </div>
                   </div>

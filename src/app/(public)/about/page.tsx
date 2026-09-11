@@ -3,47 +3,17 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Building2,
   GraduationCap,
   HeartHandshake,
   Target,
   Users,
   Wrench,
-  Microscope,
-  BookOpenCheck,
-  Cpu,
 } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
+import { PublicTeam } from "@/components/public-team";
 
 export default function AboutPage() {
   const { t, lang } = useLang();
-
-  const team = [
-    {
-      name: lang === "en" ? "School Founder" : "የትምህርት ቤት መስራች",
-      title: t("about.team.member.admin"),
-      icon: <Building2 className="h-5 w-5" aria-hidden />,
-      initials: "SA",
-    },
-    {
-      name: lang === "en" ? "Eng. Abiy" : "መሀንድስ አቢይ",
-      title: t("about.team.member.engineer"),
-      icon: <Cpu className="h-5 w-5" aria-hidden />,
-      initials: "EA",
-    },
-    {
-      name: lang === "en" ? "Dr. Demssie" : "ዶ/ር ደምሰው",
-      title: t("about.team.member.researcher1"),
-      icon: <Microscope className="h-5 w-5" aria-hidden />,
-      initials: "DD",
-    },
-    {
-      name: lang === "en" ? "Dr. Betel" : "ዶ/ር ቤተል",
-      title: t("about.team.member.researcher2"),
-      icon: <BookOpenCheck className="h-5 w-5" aria-hidden />,
-      initials: "DB",
-    },
-  ];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -71,7 +41,10 @@ export default function AboutPage() {
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white">
             <GraduationCap className="h-6 w-6" aria-hidden />
           </span>
-          <h2 className="mt-5 text-xl font-extrabold">{t("brand.partner")}</h2>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-royal-200">
+            {t("brand.partner.role")}
+          </p>
+          <h2 className="mt-1 text-xl font-extrabold">{t("brand.partner")}</h2>
           <p className="mt-3 leading-relaxed text-slate-200">
             {t("landing.partnership.desc")}
           </p>
@@ -86,7 +59,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Team */}
+      {/* Core Team — dynamic from the public directory */}
       <div className="mt-20">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-royal-700" aria-hidden />
@@ -95,25 +68,10 @@ export default function AboutPage() {
           </h2>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
-          {lang === "en"
-            ? "Six core members guide the school: the founder, a lead learning engineer and three researchers from Debre Berhan University's education research group, plus dedicated teaching staff."
-            : "የመስራቹን፣ ዋና መሀንድሱን እና የደብረ ብርሃን ዩኒቨርሲቲ የትምህርት ምርምር ቡድን የሆኑ ሦስት ተመራማሪዎችን ጨምሮ ስድስት ዋና የቡድን አባላት ትምህርት ቤቱን ይመራሉ።"}
+          {t("about.team.subtitle")}
         </p>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {team.map((member) => (
-            <div
-              key={member.name}
-              className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-xl shadow-slate-900/5 transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-royal-700/10"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-royal-600 to-royal-800 text-lg font-extrabold text-white shadow-glow">
-                {member.initials}
-              </span>
-              <h3 className="mt-4 font-extrabold text-slate-900">{member.name}</h3>
-              <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                {member.icon} {member.title}
-              </p>
-            </div>
-          ))}
+        <div className="mt-8">
+          <PublicTeam />
         </div>
       </div>
 

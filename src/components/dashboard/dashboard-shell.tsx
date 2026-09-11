@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
+import { LogoMark } from "@/components/logo";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDashboard } from "@/lib/dashboard-context";
 import { cn, initials } from "@/lib/utils";
@@ -57,9 +58,7 @@ export function DashboardShell({
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-royal-600 to-royal-800 text-white shadow-lg shadow-royal-700/30">
-          <GraduationCap className="h-5 w-5" aria-hidden />
-        </span>
+        <LogoMark className="h-10 w-10 rounded-xl shadow-lg shadow-royal-700/30" />
         <div className="leading-tight">
           <p className="text-sm font-extrabold tracking-tight text-slate-900">
             {t("brand.short")}

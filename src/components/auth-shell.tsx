@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { GraduationCap } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
+import { LogoMark } from "./logo";
 
 export function AuthShell({ children }: { children: ReactNode }) {
   const { t } = useLang();
@@ -15,9 +15,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
       />
       <div className="mx-auto flex max-w-md flex-col px-4 py-14 sm:py-20">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-royal-600 to-royal-800 text-white shadow-xl shadow-royal-700/30">
-            <GraduationCap className="h-7 w-7" aria-hidden />
-          </span>
+          <LogoMark className="h-14 w-14 rounded-2xl shadow-xl shadow-royal-700/30" />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
             {t("brand.short")}
           </h1>

@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { GraduationCap, Menu, X, LogOut, LayoutGrid } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { LanguageToggle } from "./language-toggle";
+import { LogoMark } from "./logo";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -50,10 +51,8 @@ export function Navbar() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-royal-600 to-royal-800 text-white shadow-lg shadow-royal-700/30">
-            <GraduationCap className="h-5 w-5" aria-hidden />
-          </span>
+        <Link href="/" className="group flex items-center gap-2.5">
+          <LogoMark className="h-10 w-10 rounded-xl shadow-lg shadow-royal-700/30 transition group-hover:shadow-royal-700/50" />
           <span className="leading-tight">
             <span className="block text-sm font-extrabold tracking-tight text-slate-900">
               {t("brand.short")}
@@ -107,16 +106,9 @@ export function Navbar() {
             <div className="hidden items-center gap-2 md:flex">
               <Link
                 href="/signin"
-                className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white/70 px-4 text-sm font-semibold text-slate-700 transition hover:border-royal-400 hover:text-royal-700"
+                className="inline-flex h-9 items-center rounded-xl bg-royal-700 px-4 text-sm font-semibold text-white shadow-lg shadow-royal-700/25 transition hover:bg-royal-600"
               >
                 {t("nav.signIn")}
-              </Link>
-              <Link
-                href="/signup"
-                className="inline-flex h-9 items-center gap-2 rounded-xl bg-royal-700 px-4 text-sm font-semibold text-white shadow-lg shadow-royal-700/25 transition hover:bg-royal-600"
-              >
-                <GraduationCap className="h-4 w-4" aria-hidden />
-                {t("nav.signUp")}
               </Link>
             </div>
           ) : null}
@@ -182,16 +174,9 @@ export function Navbar() {
                 <Link
                   href="/signin"
                   onClick={() => setOpen(false)}
-                  className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700"
-                >
-                  {t("nav.signIn")}
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setOpen(false)}
                   className="inline-flex h-9 items-center rounded-xl bg-royal-700 px-4 text-sm font-semibold text-white"
                 >
-                  {t("nav.signUp")}
+                  {t("nav.signIn")}
                 </Link>
               </div>
             )}

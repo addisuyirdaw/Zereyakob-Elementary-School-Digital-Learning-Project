@@ -11,6 +11,8 @@ export type Database = {
           phone: string;
           title: string;
           bio: string;
+          profession: string;
+          is_public: boolean;
           avatar_url: string;
           updated_at: string;
         };

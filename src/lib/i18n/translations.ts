@@ -10,12 +10,16 @@ export const translations: Record<string, Entry> = {
   "brand.name": { en: "Zereyakob Elementary", am: "ዘረያቆብ አንደኛ ደረጃ ትምህርት ቤት" },
   "brand.short": { en: "Zereyakob", am: "ዘረያቆብ" },
   "brand.tagline": {
-    en: "Digital Learning Platform",
-    am: "የዲጂታል ትምህርት መድረክ",
+    en: "Non-Profit Kids Learning Initiative",
+    am: "የልጆች ትምህርት መርሃ ግብር — ለትርፍ ያልሆነ",
   },
   "brand.partner": {
     en: "Debre Berhan University",
     am: "ደብረ ብርሃን ዩኒቨርሲቲ",
+  },
+  "brand.partner.role": {
+    en: "Official partner & supporter",
+    am: "ይፋዊ አጋር እና ደጋፊ",
   },
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -194,6 +198,10 @@ export const translations: Record<string, Entry> = {
     am: "ለእያንዳንዱ የዘረያቆብ ልጅ በደብረ ብርሃን ዩኒቨርሲቲ ምርምር የሚመራ ደስታና ጥራት ያለው፣ በቴክኖሎጂ የታገዘ የአንደኛ ደረጃ ትምህርት መስጠት በራስ የመተማመንና የማወቅ ጉጉት ያላቸው ዜጎችን ማፍራት ነው።",
   },
   "about.team.title": { en: "Core team", am: "ዋና ቡድን" },
+  "about.team.subtitle": {
+    en: "The staff, teachers and researchers behind Zereyakob — published directly from the school's Staff & Admins directory.",
+    am: "የዘረያቆብ ጀርባ የቆሙ ሰራተኞች፣ መምህራን እና ተመራማሪዎች — በቀጥታ ከትምህርት ቤቱ የሰራተኞች እና አድሚኖች ማውጫ የተወሰዱ።",
+  },
   "about.team.member.admin": { en: "School Founder & Super Admin", am: "የትምህርት ቤት መስራች እና ሱፐር አድሚን" },
   "about.team.member.engineer": { en: "Lead Learning Engineer", am: "ዋና የትምህርት መሀንድስ" },
   "about.team.member.researcher1": {
@@ -438,6 +446,25 @@ export const translations: Record<string, Entry> = {
   },
   "sf.hiddenOnMobile": { en: "Name", am: "ስም" },
   "sf.noStaff": { en: "No staff members yet", am: "እስካሁን ምንም ሰራተኞች የሉም" },
+  "sf.public": { en: "Public", am: "ህዝባዊ" },
+  "sf.profession": { en: "Profession / title (optional)", am: "ሙያ / ማዕረግ (አማራጭ)" },
+  "sf.bio": { en: "Full bio / career summary", am: "የሙያ መግለጫ / ማጠቃለያ" },
+  "sf.photo": { en: "Photo", am: "ፎቶ" },
+  "sf.photoUpload": { en: "Upload photo", am: "ፎቶ ስቀል" },
+  "sf.photoUploading": { en: "Uploading…", am: "በመጫን ላይ…" },
+  "sf.photoHint": {
+    en: "JPG or PNG, up to 5 MB — the preview updates instantly.",
+    am: "JPG ወይም PNG፣ እስከ 5 ሜጋ ባይት — ቅድመ እይታው ወዲያውኑ ይታደሳል።",
+  },
+  "sf.photoTooLarge": { en: "Photo must be 5 MB or smaller.", am: "ፎቶው ከ 5 ሜጋ ባይት ያነሰ መሆን አለበት።" },
+  "sf.photoError": { en: "Could not upload the photo.", am: "ፎቶውን ማስጨናገን አልተቻለም።" },
+  "sf.photoSaved": { en: "Photo uploaded", am: "ፎቶ ተሰቅሏል" },
+  "sf.photoRemove": { en: "Remove photo", am: "ፎቶ አስወግድ" },
+  "sf.publish": { en: "Publish to public directory", am: "በህዝብ ማውጫ ላይ አትም" },
+  "sf.publishHint": {
+    en: "Shows an avatar, name, profession and bio card on the public Core Team section.",
+    am: "በህዝብ ዋና ቡድን ክፍል ላይ የፎቶ፣ ስም፣ ሙያ እና መግለጫ ካርድ ያሳያል።",
+  },
 
   // ── Media Showcase ─────────────────────────────────────────────────────────
   "md.title": { en: "Media & Gallery", am: "ሚድያ እና ጋለሪ" },
@@ -502,6 +529,11 @@ export const translations: Record<string, Entry> = {
     en: "Media is being prepared — check back soon.",
     am: "ሚድያ በዝግጅት ላይ ነው — በቅርቡ ይመልሱ።",
   },
+  "carousel.explore": { en: "Explore", am: "ያስሱ" },
+  "carousel.prev": { en: "Previous slide", am: "ቀዳሚ ስላይድ" },
+  "carousel.next": { en: "Next slide", am: "ቀጣይ ስላይድ" },
+  "carousel.pause": { en: "Pause", am: "አቁም" },
+  "carousel.play": { en: "Play", am: "አጫውት" },
 
   // ── DBU Club Connect ───────────────────────────────────────────────────────
   "club.banner.eyebrow": {

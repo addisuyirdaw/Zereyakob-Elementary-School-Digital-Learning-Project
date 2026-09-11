@@ -122,8 +122,8 @@ export function MediaFormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
           <h2 className="text-lg font-extrabold text-slate-900">
             {item ? t("md.edit") : t("md.add")}
           </h2>
@@ -132,7 +132,7 @@ export function MediaFormModal({
           </button>
         </div>
 
-        <form onSubmit={submit} className="space-y-4 px-6 py-5">
+        <form onSubmit={submit} className="space-y-4 overflow-y-auto px-6 py-5">
           <div>
             <label className="mb-1 block text-sm font-semibold text-slate-700">
               {t("md.titleField")}

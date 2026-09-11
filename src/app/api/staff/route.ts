@@ -41,6 +41,11 @@ export async function POST(request: Request) {
     first_name?: string;
     last_name?: string;
     role?: string;
+    profession?: string;
+    title?: string;
+    bio?: string;
+    avatar_url?: string;
+    is_public?: boolean;
   };
   try {
     body = await request.json();
@@ -60,6 +65,14 @@ export async function POST(request: Request) {
     return json({ code: "invalid_fields" }, 400);
   }
 
+  const details: Record<string, string | boolean> = {
+    profession: (body.profession ?? "").trim(),
+    title: (body.title ?? "").trim(),
+    bio: (body.bio ?? "").trim(),
+    avatar_url: (body.avatar_url ?? "").trim(),
+    is_public: body.is_public === true,
+  };
+
   // If an account already exists for this email, link it to the staff role
   // instead of creating a duplicate.
   const { data: linked } = await admin
@@ -74,6 +87,7 @@ export async function POST(request: Request) {
         role,
         first_name: firstName,
         last_name: lastName,
+        ...details,
       })
       .eq("id", linked.id);
     if (error) return json({ code: "db_error", message: error.message }, 500);
@@ -89,7 +103,7 @@ export async function POST(request: Request) {
 
   const { error: profileError } = await admin
     .from("profiles")
-    .update({ role, first_name: firstName, last_name: lastName })
+    .update({ role, first_name: firstName, last_name: lastName, ...details })
     .eq("id", data.user.id);
   if (profileError) return json({ code: "db_error", message: profileError.message }, 500);
 
@@ -109,6 +123,11 @@ export async function PATCH(request: Request) {
     first_name?: string;
     last_name?: string;
     role?: string;
+    profession?: string;
+    title?: string;
+    bio?: string;
+    avatar_url?: string;
+    is_public?: boolean;
   };
   try {
     body = await request.json();
@@ -119,7 +138,7 @@ export async function PATCH(request: Request) {
   const id = body.id ?? "";
   if (!id) return json({ code: "invalid_fields" }, 400);
 
-  const profilePatch: Record<string, string> = {};
+  const profilePatch: Record<string, string | boolean> = {};
   if (body.role !== undefined) {
     if (!STAFF_ROLES.includes(body.role as StaffRole)) {
       return json({ code: "invalid_fields" }, 400);
@@ -128,6 +147,11 @@ export async function PATCH(request: Request) {
   }
   if (body.first_name !== undefined) profilePatch.first_name = body.first_name.trim();
   if (body.last_name !== undefined) profilePatch.last_name = body.last_name.trim();
+  if (body.profession !== undefined) profilePatch.profession = body.profession.trim();
+  if (body.title !== undefined) profilePatch.title = body.title.trim();
+  if (body.bio !== undefined) profilePatch.bio = body.bio.trim();
+  if (body.avatar_url !== undefined) profilePatch.avatar_url = body.avatar_url.trim();
+  if (body.is_public !== undefined) profilePatch.is_public = body.is_public === true;
 
   if (body.email !== undefined && (body.email ?? "").trim().toLowerCase() !== "") {
     const { error: emailError } = await admin.auth.admin.updateUserById(id, {
