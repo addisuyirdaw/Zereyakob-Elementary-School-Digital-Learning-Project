@@ -23,8 +23,9 @@ export function PublicTeam() {
         .from("profiles")
         .select("*")
         .eq("is_public", true)
-        .in("role", ["super_admin", "admin", "teacher", "staff"])
-        .order("first_name");
+        .gte("display_order", 1)
+        .lte("display_order", 6)
+        .order("display_order", { ascending: true });
       if (!cancelled) {
         setMembers(data ?? []);
         setLoaded(true);

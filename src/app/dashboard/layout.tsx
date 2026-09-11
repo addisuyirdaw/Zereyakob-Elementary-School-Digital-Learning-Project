@@ -8,6 +8,9 @@ import type { ReactNode } from "react";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DashboardLayout({
   children,
 }: {

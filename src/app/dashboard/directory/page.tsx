@@ -54,12 +54,19 @@ export default function DirectoryPage() {
   );
   const team = useMemo(
     () =>
-      profiles.filter(
-        (p) =>
-          p.role === "admin" ||
-          p.role === "super_admin" ||
-          p.role === "staff"
-      ),
+      profiles
+        .filter(
+          (p) =>
+            p.role === "admin" ||
+            p.role === "super_admin" ||
+            p.role === "staff"
+        )
+        .sort((a, b) => {
+          const rank = (r: string) => (r === "super_admin" ? 1 : r === "admin" ? 2 : 3);
+          const diff = rank(a.role) - rank(b.role);
+          if (diff !== 0) return diff;
+          return (a.first_name || "").localeCompare(b.first_name || "");
+        }),
     [profiles]
   );
 

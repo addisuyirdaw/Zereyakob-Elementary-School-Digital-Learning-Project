@@ -128,6 +128,7 @@ export async function PATCH(request: Request) {
     bio?: string;
     avatar_url?: string;
     is_public?: boolean;
+    display_order?: number;
   };
   try {
     body = await request.json();
@@ -138,7 +139,7 @@ export async function PATCH(request: Request) {
   const id = body.id ?? "";
   if (!id) return json({ code: "invalid_fields" }, 400);
 
-  const profilePatch: Record<string, string | boolean> = {};
+  const profilePatch: Record<string, string | boolean | number> = {};
   if (body.role !== undefined) {
     if (!STAFF_ROLES.includes(body.role as StaffRole)) {
       return json({ code: "invalid_fields" }, 400);
@@ -156,6 +157,7 @@ export async function PATCH(request: Request) {
   if (body.bio !== undefined) profilePatch.bio = body.bio.trim();
   if (body.avatar_url !== undefined) profilePatch.avatar_url = body.avatar_url.trim();
   if (body.is_public !== undefined) profilePatch.is_public = body.is_public === true;
+  if (body.display_order !== undefined) profilePatch.display_order = Number(body.display_order) || 0;
 
   if (body.email !== undefined && (body.email ?? "").trim().toLowerCase() !== "") {
     const { error: emailError } = await admin.auth.admin.updateUserById(id, {

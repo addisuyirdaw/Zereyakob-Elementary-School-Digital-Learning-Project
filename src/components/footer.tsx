@@ -48,11 +48,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="transition hover:text-white">
-                  {t("nav.dashboard")}
-                </Link>
-              </li>
-              <li>
                 <a
                   href="https://dbu-ss.vercel.app"
                   target="_blank"

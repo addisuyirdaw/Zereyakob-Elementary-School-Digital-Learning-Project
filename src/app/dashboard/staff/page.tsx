@@ -51,13 +51,21 @@ export default function StaffPage() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return members.filter(
-      (m) =>
-        !needle ||
-        `${m.first_name} ${m.last_name}`.toLowerCase().includes(needle) ||
-        m.email.toLowerCase().includes(needle) ||
-        `${m.role}`.includes(needle)
-    );
+    return members
+      .filter(
+        (m) =>
+          !needle ||
+          `${m.first_name} ${m.last_name}`.toLowerCase().includes(needle) ||
+          m.email.toLowerCase().includes(needle) ||
+          `${m.role}`.includes(needle)
+      )
+      .sort((a, b) => {
+        const orderA = ROLE_ORDER.indexOf(a.role);
+        const orderB = ROLE_ORDER.indexOf(b.role);
+        const diff = (orderA === -1 ? 99 : orderA) - (orderB === -1 ? 99 : orderB);
+        if (diff !== 0) return diff;
+        return (a.first_name || "").localeCompare(b.first_name || "");
+      });
   }, [members, query]);
 
   const changeRole = async (member: Profile, role: Role) => {

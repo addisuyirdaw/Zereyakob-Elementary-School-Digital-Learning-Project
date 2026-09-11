@@ -162,11 +162,21 @@ export default function LandingPage() {
               {t("funding.ctaSecondary")}
             </a>
           </div>
-          <p className="mt-6 text-center text-xs text-slate-400">
-            {lang === "en"
-              ? "Debre Berhan University verifies and co-supervises all funds."
-              : "ደብረ ብርሃን ዩኒቨርሲቲ ሁሉንም ገንዘቦች ያረጋግጣል እና በጋራ ይቆጣጠራል።"}
-          </p>
+          {/* Payment integration notice */}
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+              {lang === "en"
+                ? "Automated payment integration — Coming Soon"
+                : "አውቶማቲክ ክፍያ ውህደት — በቅርቡ ይመጣል"}
+            </span>
+            <p className="text-center text-xs text-slate-400">
+              {lang === "en"
+                ? "Debre Berhan University verifies and co-supervises all funds."
+                : "ደብረ ብርሃን ዩኒቨርሲቲ ሁሉንም ገንዘቦች ያረጋግጣል እና በጋራ ይቆጣጠራል።"}
+            </p>
+          </div>
+
         </div>
       </section>
 

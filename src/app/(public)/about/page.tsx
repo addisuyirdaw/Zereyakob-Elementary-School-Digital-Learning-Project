@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { PublicTeam } from "@/components/public-team";
+import { PublicContributors } from "@/components/public-contributors";
 
 export default function AboutPage() {
   const { t, lang } = useLang();
@@ -72,6 +73,24 @@ export default function AboutPage() {
         </p>
         <div className="mt-8">
           <PublicTeam />
+        </div>
+      </div>
+
+      {/* Project Contributors & Interns */}
+      <div className="mt-20">
+        <div className="flex items-center gap-3">
+          <GraduationCap className="h-6 w-6 text-royal-700" aria-hidden />
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            {lang === "en" ? "Project Contributors & Interns" : "የፕሮጀክት አስተዋፅዖ አበርካቾች እና ሰልጣኞች"}
+          </h2>
+        </div>
+        <p className="mt-2 max-w-2xl text-sm text-slate-500">
+          {lang === "en"
+            ? "Instructors, project leads, former interns, and new team members driving digital learning forward."
+            : "የዲጂታል ትምህርት ፈጠራን የሚያንቀሳቅሱ አስተማሪዎች፣ የፕሮጀክት መሪዎች፣ የቀድሞ ሰልጣኞች እና የቡድን አባላት።"}
+        </p>
+        <div className="mt-8">
+          <PublicContributors />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -33,16 +33,24 @@ export function DashboardProvider({
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(profile);
   const router = useRouter();
 
+  useEffect(() => {
+    setCurrentProfile(profile);
+  }, [profile]);
+
   const refreshProfile = useCallback(async () => {
     const supabase = createClient();
-    if (!supabase) return;
+    if (!supabase || !user?.id) return;
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", user?.id ?? "")
+      .eq("id", user.id)
       .maybeSingle();
     if (!error && data) setCurrentProfile(data);
   }, [user?.id]);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   const signOut = useCallback(async () => {
     const supabase = createClient();

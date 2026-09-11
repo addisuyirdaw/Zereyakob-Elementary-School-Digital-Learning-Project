@@ -14,6 +14,7 @@ export type Database = {
           profession: string;
           is_public: boolean;
           avatar_url: string;
+          display_order: number;
           updated_at: string;
         };
         Insert: Partial<{

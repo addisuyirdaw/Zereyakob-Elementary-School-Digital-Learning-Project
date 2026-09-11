@@ -30,7 +30,7 @@ export function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isPublic = pathname.startsWith("/signin") || pathname.startsWith("/signup");
+  const isAdminRoute = pathname.startsWith("/admin-login") || pathname.startsWith("/signin") || pathname.startsWith("/signup");
 
   const signOut = useCallback(async () => {
     const supabase = createClient();
@@ -86,7 +86,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <LanguageToggle className="hidden sm:flex" />
-          {user ? (
+          {user && (
             <div className="hidden items-center gap-2 md:flex">
               <Link
                 href="/dashboard"
@@ -102,16 +102,7 @@ export function Navbar() {
                 <LogOut className="h-4 w-4" aria-hidden />
               </button>
             </div>
-          ) : !isPublic ? (
-            <div className="hidden items-center gap-2 md:flex">
-              <Link
-                href="/signin"
-                className="inline-flex h-9 items-center rounded-xl bg-royal-700 px-4 text-sm font-semibold text-white shadow-lg shadow-royal-700/25 transition hover:bg-royal-600"
-              >
-                {t("nav.signIn")}
-              </Link>
-            </div>
-          ) : null}
+          )}
 
           <button
             onClick={() => setOpen((value) => !value)}
@@ -153,7 +144,7 @@ export function Navbar() {
           </a>
           <div className="flex items-center justify-between gap-3 pt-2">
             <LanguageToggle />
-            {user ? (
+            {user && (
               <div className="flex items-center gap-2">
                 <Link
                   href="/dashboard"
@@ -168,16 +159,6 @@ export function Navbar() {
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/signin"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex h-9 items-center rounded-xl bg-royal-700 px-4 text-sm font-semibold text-white"
-                >
-                  {t("nav.signIn")}
-                </Link>
               </div>
             )}
           </div>
