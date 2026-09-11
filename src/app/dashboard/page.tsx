@@ -61,7 +61,7 @@ export default function OverviewPage() {
         supabase
           .from("profiles")
           .select("id")
-          .in("role", ["teacher", "engineer", "admin"]),
+          .in("role", ["teacher", "staff", "admin", "super_admin"]),
       ]);
       if (cancelled) return;
       setStudents(studentsRes.data ?? []);

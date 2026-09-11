@@ -5,7 +5,7 @@ export type Database = {
         Row: {
           id: string;
           email: string;
-          role: 'student' | 'teacher' | 'engineer' | 'admin';
+          role: 'student' | 'teacher' | 'staff' | 'admin' | 'super_admin';
           first_name: string;
           last_name: string;
           phone: string;
@@ -17,7 +17,7 @@ export type Database = {
         Insert: Partial<{
           id: string;
           email: string;
-          role: 'student' | 'teacher' | 'engineer' | 'admin';
+          role: 'student' | 'teacher' | 'staff' | 'admin' | 'super_admin';
           [key: string]: unknown;
         }>;
         Update: Partial<Record<string, unknown>>;
@@ -111,6 +111,57 @@ export type Database = {
         }>;
         Update: Partial<Record<string, unknown>>;
       };
+      partners: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          website: string;
+          logo_url: string;
+          description_en: string;
+          description_am: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          name: string;
+          slug: string;
+          website: string;
+          logo_url: string;
+          description_en: string;
+          description_am: string;
+          sort_order: number;
+          is_active: boolean;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+    media_showcase: {
+        Row: {
+          id: string;
+          title: string;
+          caption: string;
+          media_url: string;
+          media_type: 'image' | 'video' | 'interview';
+          is_featured_video: boolean;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          title: string;
+          caption: string;
+          media_url: string;
+          media_type: 'image' | 'video' | 'interview';
+          is_featured_video: boolean;
+          display_order: number;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
     };
     Functions: {
       current_role: {
@@ -122,6 +173,10 @@ export type Database = {
         Returns: boolean;
       };
       is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      is_super_admin: {
         Args: Record<string, never>;
         Returns: boolean;
       };

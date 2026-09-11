@@ -16,6 +16,7 @@ type DashboardContextValue = {
   signOut: () => Promise<void>;
   isStaff: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 };
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
@@ -51,8 +52,10 @@ export function DashboardProvider({
   }, [router]);
 
   const role = currentProfile?.role ?? "student";
-  const isStaff = role === "admin" || role === "engineer" || role === "teacher";
-  const isAdmin = role === "admin" || role === "engineer";
+  const isStaff =
+    role === "super_admin" || role === "admin" || role === "teacher" || role === "staff";
+  const isAdmin = role === "super_admin" || role === "admin";
+  const isSuperAdmin = role === "super_admin";
 
   return (
     <DashboardContext.Provider
@@ -63,6 +66,7 @@ export function DashboardProvider({
         signOut,
         isStaff,
         isAdmin,
+        isSuperAdmin,
       }}
     >
       {children}

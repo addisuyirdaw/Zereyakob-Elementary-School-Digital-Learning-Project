@@ -7,10 +7,12 @@ import {
   CalendarCheck2,
   GraduationCap,
   HeartHandshake,
+  Images,
   LayoutGrid,
   LogOut,
   Menu,
   Settings,
+  UserCog,
   Users,
   X,
 } from "lucide-react";
@@ -27,7 +29,7 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const { t } = useLang();
-  const { profile, signOut, user } = useDashboard();
+  const { profile, signOut, user, isAdmin } = useDashboard();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -39,6 +41,12 @@ export function DashboardShell({
   const nav = [
     { href: "/dashboard", label: t("dash.overview"), icon: <LayoutGrid className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/students", label: t("dash.students"), icon: <Users className="h-4 w-4" aria-hidden /> },
+    ...(isAdmin
+      ? [{ href: "/dashboard/staff", label: t("dash.staff"), icon: <UserCog className="h-4 w-4" aria-hidden /> }]
+      : []),
+    ...(isAdmin
+      ? [{ href: "/dashboard/media", label: t("dash.media"), icon: <Images className="h-4 w-4" aria-hidden /> }]
+      : []),
     { href: "/dashboard/attendance", label: t("dash.attendance"), icon: <CalendarCheck2 className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/directory", label: t("dash.directory"), icon: <BarChart3 className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/reports", label: t("dash.reports"), icon: <GraduationCap className="h-4 w-4" aria-hidden /> },
@@ -85,9 +93,18 @@ export function DashboardShell({
       </nav>
       <div className="border-t border-slate-200/70 p-3">
         <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-royal-100 text-sm font-bold text-royal-800">
-            {initials(profile?.first_name ?? "", profile?.last_name ?? "")}
-          </span>
+          {profile?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.avatar_url}
+              alt=""
+              className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white"
+            />
+          ) : (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-royal-100 text-sm font-bold text-royal-800">
+              {initials(profile?.first_name ?? "", profile?.last_name ?? "")}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-slate-900">{displayName}</p>
             <p className="text-xs text-royal-700">{t(`role.${profile?.role}`)}</p>

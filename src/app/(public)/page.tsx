@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { ContactForm } from "@/components/contact-form";
+import { PartnersGrid } from "@/components/partners";
+import { MediaCarousel } from "@/components/media-carousel";
+import { MediaInterviews } from "@/components/media-interviews";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -149,42 +152,114 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Debre Berhan University partnership */}
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-royal-800 via-royal-900 to-slate-950 p-8 shadow-2xl shadow-royal-900/30 sm:p-12">
-          <div
-            className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-royal-500/20 blur-3xl"
-            aria-hidden
-          />
-          <div
-            className="absolute -bottom-20 left-1/4 h-56 w-56 rounded-full bg-royal-400/10 blur-3xl"
-            aria-hidden
-          />
-          <div className="relative grid items-center gap-8 lg:grid-cols-[auto_1fr_auto]">
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-royal-500 text-white shadow-glow">
-              <GraduationCap className="h-8 w-8" aria-hidden />
-            </span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-royal-300">
-                {t("brand.partner")}
-              </p>
-              <h2 className="mt-2 text-2xl font-extrabold text-white sm:text-3xl">
-                {t("landing.partnership.title")}
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-                {t("landing.partnership.desc")}
-              </p>
-            </div>
+      {/* Partners (dynamic — managed from the Dashboard) */}
+      <section id="partners" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+        <PartnersGrid />
+      </section>
+
+      {/* Funding / sponsorship — calls-to-action for donors */}
+      <section id="sponsor" className="border-t border-slate-200/70 bg-gradient-to-b from-white to-royal-50/60 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              {t("funding.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-slate-600">
+              {t("funding.subtitle")}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                icon: <GraduationCap className="h-5 w-5" aria-hidden />,
+                title: t("funding.tier.learner.title"),
+                desc: t("funding.tier.learner.desc"),
+              },
+              {
+                icon: <Users className="h-5 w-5" aria-hidden />,
+                title: t("funding.tier.classroom.title"),
+                desc: t("funding.tier.classroom.desc"),
+              },
+              {
+                icon: <Globe2 className="h-5 w-5" aria-hidden />,
+                title: t("funding.tier.tech.title"),
+                desc: t("funding.tier.tech.desc"),
+              },
+            ].map((tier) => (
+              <div
+                key={tier.title}
+                className="flex flex-col rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-sm transition hover:-translate-y-1 hover:border-royal-300"
+              >
+                <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-royal-50 text-royal-700">
+                  {tier.icon}
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {tier.title}
+                </h3>
+                <p className="mt-1.5 flex-1 text-sm leading-relaxed text-slate-500">
+                  {tier.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href="https://www.dbu.edu.et"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur transition hover:border-white/40 hover:bg-white/20"
+              href="mailto:support@zereyakob.edu.et?subject=Sponsorship%20inquiry"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-royal-700 px-7 text-base font-semibold text-white shadow-xl shadow-royal-700/30 transition hover:bg-royal-600"
             >
-              <Globe2 className="h-4 w-4" aria-hidden />
-              dbu.edu.et
+              <HeartHandshake className="h-5 w-5" aria-hidden />
+              {t("funding.cta")}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </a>
+            <a
+              href="/#contact"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white/70 px-7 text-base font-semibold text-slate-700 backdrop-blur transition hover:border-royal-400 hover:text-royal-700"
+            >
+              {t("funding.ctaSecondary")}
+            </a>
+          </div>
+          <p className="mt-6 text-center text-xs text-slate-400">
+            {lang === "en"
+              ? "Debre Berhan University verifies and co-supervises all funds."
+              : "ደብረ ብርሃን ዩኒቨርሲቲ ሁሉንም ገንዘቦች ያረጋግጣል እና በጋራ ይቆጣጠራል።"}
+          </p>
+        </div>
+      </section>
+
+      {/* Media gallery + interviews (dynamic — managed from the Dashboard) */}
+      <section id="media" className="border-t border-slate-200/70 bg-gradient-to-b from-white to-royal-50/60 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              {t("md.gallery.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-slate-600">
+              {t("md.gallery.subtitle")}
+            </p>
+          </div>
+          <div className="mt-10">
+            <MediaCarousel />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200/70 bg-white/60 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-royal-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-royal-700">
+              {lang === "en" ? "Videos &amp; interviews" : "ቪዲዮዎች እና ቃለ መጠይቆች"}
+            </span>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              {t("md.interviews.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-slate-600">
+              {t("md.interviews.subtitle")}
+            </p>
+          </div>
+          <div className="mt-10">
+            <MediaInterviews />
           </div>
         </div>
       </section>

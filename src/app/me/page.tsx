@@ -11,20 +11,21 @@ import {
 } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { useDashboard } from "@/lib/dashboard-context";
+import { AvatarUploader } from "@/components/dashboard/avatar-uploader";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { formatDate, initials } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 type Attendance = Database["public"]["Tables"]["attendance"]["Row"];
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export default function MePage() {
   const { t, lang } = useLang();
+  const { profile } = useDashboard();
   const [student, setStudent] = useState<Student | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -42,12 +43,12 @@ export default function MePage() {
       } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       setEmail(user.email ?? "");
-      const [profileRes, studentRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-        supabase.from("students").select("*").eq("user_id", user.id).maybeSingle(),
-      ]);
+      const studentRes = await supabase
+        .from("students")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (cancelled) return;
-      setProfile(profileRes.data ?? null);
       setStudent(studentRes.data ?? null);
       if (studentRes.data) {
         const attendanceRes = await supabase
@@ -124,9 +125,7 @@ export default function MePage() {
           <CardContent className="px-6 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-royal-600 to-royal-800 text-lg font-extrabold text-white shadow-glow">
-                  {initials(student.first_name, student.last_name)}
-                </span>
+                <AvatarUploader url={profile?.avatar_url || undefined} />
                 <div>
                   <h1 className="text-xl font-extrabold text-slate-900">
                     {student.first_name} {student.last_name}

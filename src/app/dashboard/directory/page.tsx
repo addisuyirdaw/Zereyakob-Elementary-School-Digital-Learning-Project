@@ -53,7 +53,13 @@ export default function DirectoryPage() {
     [profiles]
   );
   const team = useMemo(
-    () => profiles.filter((p) => p.role === "admin" || p.role === "engineer"),
+    () =>
+      profiles.filter(
+        (p) =>
+          p.role === "admin" ||
+          p.role === "super_admin" ||
+          p.role === "staff"
+      ),
     [profiles]
   );
 
@@ -140,7 +146,11 @@ export default function DirectoryPage() {
   }
 
   const roleTone = (role: string) =>
-    role === "admin" ? "violet" : role === "engineer" ? "royal" : "green";
+    role === "super_admin" || role === "admin"
+      ? "violet"
+      : role === "staff"
+        ? "royal"
+        : "green";
 
   return (
     <div>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { toast } from "sonner";
-import { KeyRound, Shield, UserCircle2 } from "lucide-react";
+import { KeyRound, Shield } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { useDashboard } from "@/lib/dashboard-context";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge, Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/layout";
+import { AvatarUploader } from "@/components/dashboard/avatar-uploader";
+import { PartnersPanel } from "@/components/dashboard/partners-panel";
 import { initials, formatDate } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -18,7 +20,7 @@ type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export default function SettingsPage() {
   const { t, lang } = useLang();
-  const { user, profile, isAdmin, refreshProfile } = useDashboard();
+  const { user, profile, isSuperAdmin, isStaff, refreshProfile } = useDashboard();
 
   const [form, setForm] = useState({
     first_name: profile?.first_name ?? "",
@@ -36,12 +38,12 @@ export default function SettingsPage() {
   const [members, setMembers] = useState<Profile[]>([]);
 
   const loadMembers = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     const supabase = createClient();
     if (!supabase) return;
     const { data } = await supabase.from("profiles").select("*").order("role");
     setMembers(data ?? []);
-  }, [isAdmin]);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     loadMembers();
@@ -113,7 +115,15 @@ export default function SettingsPage() {
   };
 
   const roleTone = (role: string) =>
-    role === "admin" ? "violet" : role === "engineer" ? "royal" : role === "teacher" ? "green" : "slate";
+    role === "super_admin"
+      ? "violet"
+      : role === "admin"
+        ? "royal"
+        : role === "teacher"
+          ? "green"
+          : role === "staff"
+            ? "amber"
+            : "slate";
 
   return (
     <div>
@@ -123,9 +133,7 @@ export default function SettingsPage() {
         <Card>
           <CardContent className="px-6 pb-6 pt-6">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-royal-50 text-royal-700">
-                <UserCircle2 className="h-5 w-5" aria-hidden />
-              </span>
+              <AvatarUploader url={profile?.avatar_url || undefined} />
               <div>
                 <CardTitle>{t("profile.personal")}</CardTitle>
                 <CardDescription>
@@ -233,14 +241,18 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Staff: partner organizations (auto-published to homepage) */}
+      {isStaff && <PartnersPanel />}
+
       {/* Admin: team role management */}
-      {isAdmin && (
+      {isSuperAdmin && (
         <div className="mt-8">
           <div className="mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-royal-700" aria-hidden />
             <h2 className="text-lg font-extrabold text-slate-900">
               {lang === "en" ? "Team roles & permissions" : "የቡድን ሚናዎች እና ፈቃዶች"}
             </h2>
+            <Badge tone="violet">{lang === "en" ? "Super Admin only" : "ሱፐር አድሚን ብቻ"}</Badge>
           </div>
           <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white/90 shadow-xl shadow-slate-900/5">
             <div className="overflow-x-auto">
@@ -283,7 +295,7 @@ export default function SettingsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          {(["admin", "engineer", "teacher", "student"] as const).map((role) => (
+                          {(["admin", "teacher", "staff", "student"] as const).map((role) => (
                             <button
                               key={role}
                               disabled={member.id === user?.id}

@@ -62,8 +62,10 @@ export const translations: Record<string, Entry> = {
   // ── Roles ─────────────────────────────────────────────────────────────────
   "role.student": { en: "Student", am: "ተማሪ" },
   "role.teacher": { en: "Teacher", am: "መምህር" },
+  "role.staff": { en: "Staff", am: "ሰራተኛ" },
+  "role.admin": { en: "Admin", am: "አድሚን" },
+  "role.super_admin": { en: "Super Admin", am: "ሱፐር አስተዳዳሪ" },
   "role.engineer": { en: "Engineer", am: "መሀንድስ" },
-  "role.admin": { en: "Super Admin", am: "ሱፐር አስተዳዳሪ" },
   "role.team": { en: "Core Team", am: "ዋና ቡድን" },
 
   // ── Landing ───────────────────────────────────────────────────────────────
@@ -97,6 +99,57 @@ export const translations: Record<string, Entry> = {
     en: "Discover the partnership →",
     am: "አጋርነቱን ይመልከቱ →",
   },
+
+  // ── Funding & sponsorship ─────────────────────────────────────────────────
+  "funding.title": {
+    en: "Sponsor a Zereyakob child",
+    am: "የዘረያቆብን ልጅ ይደግፉ",
+  },
+  "funding.subtitle": {
+    en: "Organizations, foundations and families can fund a learner's whole year — books, a seat, a warm meal and digital learning, reported transparently.",
+    am: "ድርጅቶች፣ መሠረቶች እና ቤተሰቦች የተማሪን ሙሉ አመት መደገፍ ይችላሉ — መጽሐፍ፣ መቀመጫ፣ ሙቅ ምግብ እና ዲጂታል ትምህርት፣ በግልጽ ሪፖርት የተደረገ።",
+  },
+  "funding.tier.learner.title": { en: "Sponsor a learner", am: "ተማሪ ይደግፉ" },
+  "funding.tier.learner.desc": {
+    en: "Covers books, stationery and a daily meal for one student for a full school year.",
+    am: "የአንድ ተማሪ ሙሉ የትምህርት አመት መጽሐፍ፣ መሳሪያ እና የዕለት ምግብ ይሸፍናል።",
+  },
+  "funding.tier.classroom.title": { en: "Sponsor a classroom", am: "የመማሪያ ክፍል ይደግፉ" },
+  "funding.tier.classroom.desc": {
+    en: "Furnishes and equips a room — tables, chairs, boards and books for 15 learners.",
+    am: "ክፍልን ያስታጥቃል — ለ15 ተማሪዎች ጠረጴዛ፣ ወንበር፣ ሰሌዳ እና መጽሐፍ።",
+  },
+  "funding.tier.tech.title": { en: "Power the digital lab", am: "ዲጂታል ቤተ-ሙከራ ያብቅቁ" },
+  "funding.tier.tech.desc": {
+    en: "Tablets and connectivity for mobile learning, verified and co-supervised by Debre Berhan University.",
+    am: "ዲጂታል ትምህርት ለማስቻል ታብሌቶች እና ኔትወርክ — በደብረ ብርሃን ዩኒቨርሲቲ የተረጋገጠ እና በጋራ የሚቆጣጠር።",
+  },
+  "funding.cta": { en: "Become a sponsor", am: "ድጋፍ ሰጪ ይሁኑ" },
+  "funding.ctaSecondary": { en: "Talk to the team", am: "ከቡድኑ ጋር ይነጋገሩ" },
+
+  // ── Partners ──────────────────────────────────────────────────────────────
+  "partners.title": { en: "Partners who make it possible", am: "ይህንን የሚያስቻሉ አጋሮች" },
+  "partners.subtitle": {
+    en: "Together we build real infrastructure for learning.",
+    am: "በጋራ እውነተኛ የትምህርት መሠረተ-ልማት እንገነባለን።",
+  },
+  "partners.visit": { en: "Visit website", am: "ድረ-ገጽ ይጎብኙ" },
+  "partners.managedBy": { en: "Managed from the Dashboard", am: "ከዳሽቦርድ የሚተዳደር" },
+  "partners.manage.title": { en: "Partner organizations", am: "የአጋር ድርጅቶች" },
+  "partners.manage.subtitle": {
+    en: "New entries appear automatically on the homepage.",
+    am: "አዲስ አጋሮች በራስ-ሰር በመነሻ ገጹ ላይ ይታያሉ።",
+  },
+  "partners.manage.add": { en: "Add partner", am: "አጋር ጨምር" },
+  "partners.manage.name": { en: "Organization name", am: "የድርጅት ስም" },
+  "partners.manage.slug": { en: "Slug (unique)", am: "ስሉግ (ልዩ)" },
+  "partners.manage.website": { en: "Website URL", am: "የድረ-ገጽ አድራሻ" },
+  "partners.manage.logo": { en: "Logo image URL", am: "የአርማ ምስል አድራሻ" },
+  "partners.manage.descEn": { en: "Description (English)", am: "መግለጫ (እንግሊዝኛ)" },
+  "partners.manage.descAm": { en: "Description (አማርኛ)", am: "መግለጫ (አማርኛ)" },
+  "partners.manage.visible": { en: "Visible on homepage", am: "በመነሻ ገጽ ላይ ይታይ" },
+  "partners.manage.saved": { en: "Partner saved", am: "አጋሩ ተቀምጧል" },
+  "partners.manage.deleted": { en: "Partner removed", am: "አጋሩ ተወግዷል" },
   "landing.features.title": {
     en: "Everything a modern school needs",
     am: "ዘመናዊ ትምህርት ቤት የሚፈልገው ሁሉ",
@@ -200,6 +253,8 @@ export const translations: Record<string, Entry> = {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   "dash.overview": { en: "Overview", am: "አጠቃላይ እይታ" },
   "dash.students": { en: "Students", am: "ተማሪዎች" },
+  "dash.staff": { en: "Staff & Admins", am: "ሰራተኞች እና አድሚኖች" },
+  "dash.media": { en: "Media & Gallery", am: "ሚድያ እና ጋለሪ" },
   "dash.attendance": { en: "Attendance", am: "መገኘት" },
   "dash.directory": { en: "Directory", am: "ማውጫ" },
   "dash.reports": { en: "Reports", am: "ሪፖርቶች" },
@@ -357,6 +412,81 @@ export const translations: Record<string, Entry> = {
   "sup.inbox": { en: "Inbox", am: "መልዕክት ሳጥን" },
   "sup.saved.messages": { en: "Support messages", am: "የድጋፍ መልዕክቶች" },
 
+  // ── Staff & Admins ─────────────────────────────────────────────────────────
+  "sf.title": { en: "Staff & Admins", am: "ሰራተኞች እና አድሚኖች" },
+  "sf.subtitle": {
+    en: "Every team account in one place — add teachers, admins and staff, or adjust their roles.",
+    am: "ሁሉም የቡድን መለያዎች በአንድ ቦታ — መምህራን፣ አድሚኖች እና ሰራተኞችን ይጨምሩ ወይም ሚናቸውን ያስተካክሉ።",
+  },
+  "sf.add": { en: "Add staff member", am: "የሰራተኛ አባል ጨምር" },
+  "sf.edit": { en: "Edit staff member", am: "የሰራተኛ አባል አስተካክል" },
+  "sf.name": { en: "Staff member name", am: "የሰራተኛ ስም" },
+  "sf.email": { en: "Email", am: "ኢሜይል" },
+  "sf.role": { en: "Role", am: "ሚና" },
+  "sf.saved": { en: "Staff member saved", am: "የሰራተኛ አባል ተቀምጧል" },
+  "sf.deleted": { en: "Staff member removed", am: "የሰራተኛ አባል ተወግዷል" },
+  "sf.roleUpdated": { en: "Role updated", am: "ሚና ተዘምኗል" },
+  "sf.inviteHint": {
+    en: "The person will get an email to create their password before signing in.",
+    am: "ወደ መለያ ከመግባት በፊት የይለፍ ቃል ለመፍጠር ኢሜይል ይደርሳቸዋል።",
+  },
+  "sf.superAdminOnly": { en: "Super Admin only", am: "ሱፐር አድሚን ብቻ" },
+  "sf.requiresSecret": {
+    en: "The service-role key is not configured, so staff accounts cannot be created from here yet.",
+    am: "የሰርቪስ-ሮል ቁልፍ አልተዋቀረም፤ ስለዚህ የሰራተኛ መለያዎች እስካሁን ከዚህ ሊፈጠሩ አይችሉም።",
+  },
+  "sf.hiddenOnMobile": { en: "Name", am: "ስም" },
+  "sf.noStaff": { en: "No staff members yet", am: "እስካሁን ምንም ሰራተኞች የሉም" },
+
+  // ── Media Showcase ─────────────────────────────────────────────────────────
+  "md.title": { en: "Media & Gallery", am: "ሚድያ እና ጋለሪ" },
+  "md.subtitle": {
+    en: "Photos, screenshots and interview clips the whole world can watch — managed from one place.",
+    am: "ፎቶዎች፣ ቅጽበታዊ ማሳያዎች እና የቃለ መጠይቅ ቪዲዮዎች በአንድ ቦታ የሚተዳደሩ።",
+  },
+  "md.add": { en: "Add media", am: "ሚድያ ጨምር" },
+  "md.edit": { en: "Edit media", am: "ሚድያ አስተካክል" },
+  "md.titleField": { en: "Title", am: "ርዕስ" },
+  "md.caption": { en: "Caption", am: "መግለጫ" },
+  "md.mediaUrl": { en: "Media URL", am: "የሚድያ አድራሻ" },
+  "md.urlHint": {
+    en: "A direct image URL, a YouTube link (youtube.com/watch?v=…) or a direct .mp4 file.",
+    am: "በቀጥታ የምስል አድራሻ፣ የ YouTube አገናኝ (youtube.com/watch?v=…) ወይም በቀጥታ .mp4 ፋይል።",
+  },
+  "md.preview": { en: "Preview", am: "ቅድመ እይታ" },
+  "md.type": { en: "Media type", am: "የሚድያ አይነት" },
+  "md.typeImage": { en: "Image / screenshot", am: "ምስል / ቅጽበታዊ ማሳያ" },
+  "md.typeVideo": { en: "Video", am: "ቪዲዮ" },
+  "md.typeInterview": { en: "Interview / documentary", am: "ቃለ መጠይቅ / ዘጋቢ ፊልም" },
+  "md.featured": {
+    en: "Feature as the main public video",
+    am: "እንደ ዋና የህዝብ ቪዲዮ አሳይ",
+  },
+  "md.order": { en: "Display order", am: "የማሳያ ቅደም ተከተል" },
+  "md.saved": { en: "Media saved", am: "ሚድያ ተቀምጧል" },
+  "md.deleted": { en: "Media removed", am: "ሚድያ ተወግዷል" },
+  "md.featuredVideo": { en: "Featured", am: "ዋና" },
+  "md.up": { en: "Move up", am: "ወደ ላይ አንቀሳቅስ" },
+  "md.down": { en: "Move down", am: "ወደ ታች አንቀሳቅስ" },
+  "md.noItems": {
+    en: "Nothing here yet — add the first photo or interview clip.",
+    am: "እስካሁን ምንም የለም — የመጀመሪያውን ፎቶ ወይም የቃለ መጠይቅ ክሊፕ ያክሉ።",
+  },
+  "md.gallery.title": { en: "Moments from Zereyakob", am: "የዘረያቆብ ትዝታዎች" },
+  "md.gallery.subtitle": {
+    en: "Glimpses of the kids, the classrooms and the people making learning possible.",
+    am: "የልጆች፣ የመማሪያ ክፍሎች እና ትምህርትን የሚያስቻሉ ሰዎች ቅጽበታዊ ገጽታዎች።",
+  },
+  "md.interviews.title": { en: "Watch our story", am: "ታሪካችንን ይመልከቱ" },
+  "md.interviews.subtitle": {
+    en: "Interviews and documentaries from the classroom and the community.",
+    am: "ከመማሪያ ክፍል እና ከማህበረሰቡ የተወሰዱ ቃለ መጠይቆች እና ዘጋቢ ፊልሞች።",
+  },
+  "md.noMedia": {
+    en: "Media is being prepared — check back soon.",
+    am: "ሚድያ በዝግጅት ላይ ነው — በቅርቡ ይመልሱ።",
+  },
+
   // ── Profile ───────────────────────────────────────────────────────────────
   "profile.title": { en: "My profile", am: "የእኔ መገለጫ" },
   "profile.subtitle": {
@@ -381,6 +511,13 @@ export const translations: Record<string, Entry> = {
   "profile.password.confirm": { en: "Confirm new password", am: "አዲሱን የይለፍ ቃል ያረጋግጡ" },
   "profile.password.changed": { en: "Password changed", am: "የይለፍ ቃል ተቀይሯል" },
   "profile.memberSince": { en: "Member since", am: "አባል የሆኑበት ቀን" },
+  "profile.avatar.title": { en: "Profile photo", am: "የመገለጫ ፎቶ" },
+  "profile.avatar.change": { en: "Change photo", am: "ፎቶ ቀይር" },
+  "profile.avatar.remove": { en: "Remove photo", am: "ፎቶ አስወግድ" },
+  "profile.avatar.uploading": { en: "Uploading…", am: "በመጫን ላይ…" },
+  "profile.avatar.tooLarge": { en: "Please choose an image under 5 MB", am: "እባክዎ ከ5 ሜጋባይት በታች የሆነ ምስል ይምረጡ" },
+  "profile.avatar.error": { en: "Photo upload failed", am: "ፎቶ መጫን አልተሳካም" },
+  "profile.avatar.saved": { en: "Photo updated", am: "ፎቶ ተዘምኗል" },
 
   // ── 404 ───────────────────────────────────────────────────────────────────
   "404.title": { en: "Page not found", am: "ገጽ አልተገኘም" },
