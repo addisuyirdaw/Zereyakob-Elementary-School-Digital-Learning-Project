@@ -74,6 +74,15 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          <a
+            href="https://dbu-ss.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-1 inline-flex items-center gap-1.5 rounded-lg border border-royal-200 bg-royal-50/70 px-3 py-1.5 text-sm font-bold text-royal-700 transition hover:border-royal-300 hover:bg-royal-100"
+          >
+            <GraduationCap className="h-4 w-4" aria-hidden />
+            {t("nav.club")}
+          </a>
         </div>
 
         <div className="flex items-center gap-3">
@@ -140,6 +149,16 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          <a
+            href="https://dbu-ss.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex items-center gap-2 rounded-lg border border-royal-200 bg-royal-50/70 px-3 py-2.5 text-sm font-bold text-royal-700 hover:bg-royal-100"
+          >
+            <GraduationCap className="h-4 w-4" aria-hidden />
+            {t("nav.club")}
+          </a>
           <div className="flex items-center justify-between gap-3 pt-2">
             <LanguageToggle />
             {user ? (

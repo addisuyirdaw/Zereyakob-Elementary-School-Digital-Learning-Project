@@ -17,6 +17,7 @@ import {
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { ContactForm } from "@/components/contact-form";
 import { PartnersGrid } from "@/components/partners";
+import { ClubBanner } from "@/components/club-banner";
 import { MediaCarousel } from "@/components/media-carousel";
 import { MediaInterviews } from "@/components/media-interviews";
 import { cn } from "@/lib/utils";
@@ -151,6 +152,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Community impact — DBU Club Connect cross-promotion */}
+      <ClubBanner />
 
       {/* Partners (dynamic — managed from the Dashboard) */}
       <section id="partners" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">

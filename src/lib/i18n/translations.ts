@@ -26,6 +26,7 @@ export const translations: Record<string, Entry> = {
   "nav.signIn": { en: "Sign in", am: "ግባ" },
   "nav.signUp": { en: "Get started", am: "ይጀምሩ" },
   "nav.signOut": { en: "Sign out", am: "ውጣ" },
+  "nav.club": { en: "DBU Club Connect", am: "DBU ክለብ ኮኔክት" },
 
   // ── Common ────────────────────────────────────────────────────────────────
   "common.save": { en: "Save", am: "አስቀምጥ" },
@@ -454,6 +455,21 @@ export const translations: Record<string, Entry> = {
     am: "በቀጥታ የምስል አድራሻ፣ የ YouTube አገናኝ (youtube.com/watch?v=…) ወይም በቀጥታ .mp4 ፋይል።",
   },
   "md.preview": { en: "Preview", am: "ቅድመ እይታ" },
+  "md.upload": { en: "Upload from device", am: "ከመሳሪያ ስቀል" },
+  "md.uploading": { en: "Uploading…", am: "በመጫን ላይ…" },
+  "md.uploadError": {
+    en: "Upload failed — check the file and try again.",
+    am: "መጫን አልተሳካም — ፋይሉን ያረጋግጡ እና እንደገና ይሞክሩ።",
+  },
+  "md.uploadTooLarge": {
+    en: "File is too large (max 15 MB).",
+    am: "ፋይሉ በጣም ትልቅ ነው (ከፍተኛ 15 MB)።",
+  },
+  "md.uploadSuccess": { en: "File uploaded", am: "ፋይል ተጭኗል" },
+  "md.uploadHint": {
+    en: "Choose a photo/video from this device, or paste an external link below.",
+    am: "ከዚህ መሳሪያ ፎቶ/ቪዲዮ ይምረጡ፣ ወይም የውጭ አገናኝ ከታች ይለጥፉ።",
+  },
   "md.type": { en: "Media type", am: "የሚድያ አይነት" },
   "md.typeImage": { en: "Image / screenshot", am: "ምስል / ቅጽበታዊ ማሳያ" },
   "md.typeVideo": { en: "Video", am: "ቪዲዮ" },
@@ -485,6 +501,28 @@ export const translations: Record<string, Entry> = {
   "md.noMedia": {
     en: "Media is being prepared — check back soon.",
     am: "ሚድያ በዝግጅት ላይ ነው — በቅርቡ ይመልሱ።",
+  },
+
+  // ── DBU Club Connect ───────────────────────────────────────────────────────
+  "club.banner.eyebrow": {
+    en: "Student-led · Community-powered",
+    am: "በተማሪዎች የሚመራ · በማህበረሰብ የተጎላበተ",
+  },
+  "club.banner.title": {
+    en: "11 university clubs. One mission: lifting up Zereyakob's children.",
+    am: "11 የዩኒቨርሲቲ ክለቦች። አንድ ተልዕኮ፡ የዘረያቆብ ልጆችን ማሳደግ።",
+  },
+  "club.banner.body": {
+    en: "Students from 11 Debre Berhan University clubs are joining hands to uplift the children and hardworking parents who need it most — tutoring, school supplies, mentorship, and heart-to-heart support for our community.",
+    am: "ከደብረ ብርሃን ዩኒቨርሲቲ 11 ክለቦች የተውጣጡ ተማሪዎች የሚያስፈልጋቸውን ልጆች እና ጠንክረው የሚሰሩ ወላጆችን ለማሳደግ እጅ ለእጅ ተያይዘዋል — ማጠናከሪያ፣ የትምህርት ቁሳቁስ፣ የምክር አጋርነት እና ከልብ የሚደረግ ድጋፍ ለማህበረሰባችን።",
+  },
+  "club.banner.cta": {
+    en: "Explore DBU Club Connect",
+    am: "የ DBU ክለብ ኮኔክትን ይመልከቱ",
+  },
+  "club.banner.note": {
+    en: "A student-led initiative of Debre Berhan University · dbu-ss.vercel.app",
+    am: "የደብረ ብርሃን ዩኒቨርሲቲ በተማሪዎች የሚመራ ተነሳሽነት · dbu-ss.vercel.app",
   },
 
   // ── Profile ───────────────────────────────────────────────────────────────

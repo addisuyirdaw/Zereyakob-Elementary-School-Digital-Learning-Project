@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image, Link2, Star, X } from "lucide-react";
+import { Image, Link2, Loader2, Star, Upload, X } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Input, Select, Textarea } from "@/components/ui/field";
 import type { Database } from "@/types/database";
 
 type Media = Database["public"]["Tables"]["media_showcase"]["Row"];
+
+const MAX_BYTES = 15 * 1024 * 1024;
 
 export function MediaFormModal({
   open,
@@ -31,6 +33,8 @@ export function MediaFormModal({
   const [displayOrder, setDisplayOrder] = useState(0);
   const [featured, setFeatured] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +47,46 @@ export function MediaFormModal({
   }, [open, item]);
 
   if (!open) return null;
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/") && file.type !== "video/mp4") {
+      toast.error(t("md.uploadError"));
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error(t("md.uploadTooLarge"));
+      return;
+    }
+    const supabase = createClient();
+    if (!supabase) {
+      toast.error(t("common.error"));
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() || (file.type.startsWith("image/") ? "jpg" : "mp4");
+    const path = `media/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("media")
+      .upload(path, file, {
+        contentType: file.type,
+        cacheControl: "3600",
+      });
+    if (uploadError) {
+      setUploading(false);
+      toast.error(t("md.uploadError"));
+      return;
+    }
+    const { data: urlData } = supabase.storage
+      .from("media")
+      .getPublicUrl(uploadData.path);
+    setUploading(false);
+    setMediaUrl(urlData.publicUrl);
+    if (file.type.startsWith("image/")) setMediaType("image");
+    toast.success(t("md.uploadSuccess"));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +161,27 @@ export function MediaFormModal({
               placeholder="https://…"
               className="font-mono text-xs"
             />
-            <p className="mt-1 text-xs text-slate-400">{t("md.urlHint")}</p>
+            <p className="mt-1 text-xs text-slate-400">{t("md.uploadHint")}</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,video/mp4"
+              className="hidden"
+              onChange={onPickFile}
+            />
+            <button
+              type="button"
+              onClick={() => !uploading && fileRef.current?.click()}
+              disabled={uploading || saving}
+              className="mt-2 inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-royal-300 bg-royal-50/50 px-4 text-sm font-semibold text-royal-700 transition hover:border-royal-400 hover:bg-royal-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Upload className="h-4 w-4" aria-hidden />
+              )}
+              {uploading ? t("md.uploading") : t("md.upload")}
+            </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap, HeartHandshake, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowUpRight, GraduationCap, Handshake, HeartHandshake, Mail, MapPin, Phone } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 
 export function Footer() {
@@ -53,6 +53,18 @@ export function Footer() {
                   {t("nav.dashboard")}
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://dbu-ss.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 font-bold text-royal-300 transition hover:text-royal-200"
+                >
+                  <GraduationCap className="h-4 w-4" aria-hidden />
+                  {t("nav.club")}
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -98,6 +110,29 @@ export function Footer() {
             </div>
           </div>
           <Phone className="h-5 w-5 text-royal-400" aria-hidden />
+        </a>
+
+        {/* DBU Club Connect — student-led community initiative */}
+        <a
+          href="https://dbu-ss.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5 transition hover:border-amber-400/60 hover:from-amber-500/15"
+        >
+          <div className="flex items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-royal-950">
+              <Handshake className="h-6 w-6" aria-hidden />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-white">{t("nav.club")}</p>
+              <p className="text-xs text-slate-400">
+                {lang === "am"
+                  ? "11 የዩኒቨርሲቲ ክለቦች ህጻናትን እና ወላጆችን ለማሳደግ ተባብረዋል"
+                  : "11 university clubs joining hands to uplift children and parents"}
+              </p>
+            </div>
+          </div>
+          <ArrowUpRight className="h-5 w-5 text-amber-300" aria-hidden />
         </a>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row">
