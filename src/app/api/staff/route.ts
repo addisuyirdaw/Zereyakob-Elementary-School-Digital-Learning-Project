@@ -143,6 +143,10 @@ export async function PATCH(request: Request) {
     if (!STAFF_ROLES.includes(body.role as StaffRole)) {
       return json({ code: "invalid_fields" }, 400);
     }
+    const { data: target } = await admin.from("profiles").select("email").eq("id", id).maybeSingle();
+    if (target?.email === "addisulal@gmail.com" || target?.email === "addisul@gmail.com") {
+      return json({ code: "forbidden", message: "Bootstrap admin role cannot be changed" }, 403);
+    }
     profilePatch.role = body.role;
   }
   if (body.first_name !== undefined) profilePatch.first_name = body.first_name.trim();

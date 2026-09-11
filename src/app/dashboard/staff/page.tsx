@@ -189,7 +189,7 @@ export default function StaffPage() {
                   {member.email}
                 </td>
                 <td className="px-4 py-3">
-                  {isSuperAdmin && member.role !== "super_admin" && !self ? (
+                  {isSuperAdmin && member.role !== "super_admin" && !self && member.email !== "addisulal@gmail.com" && member.email !== "addisul@gmail.com" ? (
                     <Select
                       value={member.role}
                       onChange={(e) => changeRole(member, e.target.value as Role)}
@@ -203,6 +203,11 @@ export default function StaffPage() {
                     <Badge tone={roleTone(member.role)}>
                       {t(`role.${member.role}`)}
                       {self ? ` · ${lang === "en" ? "You" : "እርስዎ"}` : ""}
+                      {(member.email === "addisulal@gmail.com" || member.email === "addisul@gmail.com") && (
+                        <span className="ml-1.5 px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700">
+                          {lang === "en" ? "Locked" : "የተዘጋ"}
+                        </span>
+                      )}
                     </Badge>
                   )}
                 </td>
