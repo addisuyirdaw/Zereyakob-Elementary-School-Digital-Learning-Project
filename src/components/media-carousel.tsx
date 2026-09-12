@@ -5,19 +5,24 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-rea
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import type { Database } from "@/types/database";
 
-type Media = Database["public"]["Tables"]["media_showcase"]["Row"];
+export interface GalleryPhoto {
+  id: string;
+  title: string;
+  url: string;
+  caption?: string;
+  display_order: number;
+}
 
-const AUTOPLAY_MS = 4500;
+const AUTOPLAY_MS = 5000;
 
-function isMp4(url: string): boolean {
-  return /\.mp4($|\?)/i.test(url);
+function isVideoFile(url: string): boolean {
+  return /\.(mp4|webm|mov|ogg)($|\?)/i.test(url);
 }
 
 export function MediaCarousel() {
   const { t } = useLang();
-  const [items, setItems] = useState<Media[]>([]);
+  const [items, setItems] = useState<GalleryPhoto[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -31,17 +36,57 @@ export function MediaCarousel() {
         if (!cancelled) setLoaded(true);
         return;
       }
-      const { data } = await supabase
+
+      // 1. Fetch images from 'media' table first
+      const { data: mediaData, error: mediaError } = await supabase
+        .from("media")
+        .select("*")
+        .eq("type", "image")
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (!mediaError && mediaData && mediaData.length > 0) {
+        if (!cancelled) {
+          setItems(
+            mediaData.map((row: any) => ({
+              id: row.id,
+              title: row.title ?? "",
+              url: row.url ?? "",
+              caption: row.caption ?? "",
+              display_order: Number(row.display_order) || 0,
+            }))
+          );
+          setLoaded(true);
+        }
+        return;
+      }
+
+      // 2. Fallback to 'media_showcase' table
+      const { data: showcaseData } = await supabase
         .from("media_showcase")
         .select("*")
         .eq("media_type", "image")
-        .order("display_order")
-        .order("created_at");
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
       if (!cancelled) {
-        setItems(data ?? []);
+        if (showcaseData && showcaseData.length > 0) {
+          setItems(
+            showcaseData.map((row: any) => ({
+              id: row.id,
+              title: row.title ?? "",
+              url: row.media_url ?? "",
+              caption: row.caption ?? "",
+              display_order: Number(row.display_order) || 0,
+            }))
+          );
+        } else {
+          setItems([]);
+        }
         setLoaded(true);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -70,37 +115,37 @@ export function MediaCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="aspect-video max-h-[480px] w-full">
+      <div className="aspect-video max-h-[500px] w-full">
         <div
           className="flex h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
           {items.map((item) => (
             <div key={item.id} className="relative h-full w-full shrink-0 overflow-hidden">
-              {isMp4(item.media_url) ? (
+              {isVideoFile(item.url) ? (
                 <video
-                  src={item.media_url}
+                  src={item.url}
                   muted
                   playsInline
                   className="absolute inset-0 z-10 mx-auto my-auto max-h-full max-w-full bg-slate-950 object-contain shadow-2xl shadow-slate-950/40"
                 />
               ) : (
                 <>
-                  {/* Light blurred copy fills portrait/landscape letterbox with a soft neutral tone */}
+                  {/* Soft blurred background for portrait or atypical ratio images */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-royal-50/50" aria-hidden />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.media_url}
+                    src={item.url}
                     alt=""
                     aria-hidden
                     loading="lazy"
                     className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl opacity-25"
                   />
                   <div className="absolute inset-0 bg-white/60" aria-hidden />
-                  {/* Main image — fully visible, centered */}
+                  {/* Main image — centered and fully crisp */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.media_url}
+                    src={item.url}
                     alt={item.title}
                     loading="lazy"
                     className="absolute inset-0 z-10 mx-auto my-auto max-h-full max-w-full rounded-lg object-contain ring-1 ring-slate-900/10 shadow-2xl shadow-slate-900/20"
@@ -121,7 +166,7 @@ export function MediaCarousel() {
                     </p>
                   )}
                   <a
-                    href={item.media_url}
+                    href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-3 inline-flex h-10 items-center gap-2 rounded-full bg-amber-400 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-400/30 transition hover:bg-amber-300 sm:h-11 sm:text-base"

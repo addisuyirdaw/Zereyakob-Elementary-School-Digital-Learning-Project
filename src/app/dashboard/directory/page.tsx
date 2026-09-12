@@ -62,6 +62,9 @@ export default function DirectoryPage() {
             p.role === "staff"
         )
         .sort((a, b) => {
+          const orderA = a.display_order ?? 100;
+          const orderB = b.display_order ?? 100;
+          if (orderA !== orderB) return orderA - orderB;
           const rank = (r: string) => (r === "super_admin" ? 1 : r === "admin" ? 2 : 3);
           const diff = rank(a.role) - rank(b.role);
           if (diff !== 0) return diff;

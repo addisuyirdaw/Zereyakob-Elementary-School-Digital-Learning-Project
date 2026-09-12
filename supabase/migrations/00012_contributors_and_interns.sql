@@ -50,12 +50,13 @@ set display_order = 14,
     is_public = true
 where email = 'contributor.engineerabiy@zereyakob.edu.et';
 
--- 15: Temketem Tsige (Education Contributor)
+-- 7: Temketem Tsige (Education Lead & Advisor - Core Team)
 update public.profiles
-set display_order = 15,
-    profession = 'Education Contributor',
+set display_order = 7,
+    profession = 'Education Lead & Curriculum Advisor',
     is_public = true
-where email = 'contributor.temketem@zereyakob.edu.et';
+where email = 'contributor.temketem@zereyakob.edu.et'
+   or lower(first_name) like '%temketem%';
 
 -- Hide duplicate Yettie contributor (since core profile tett@gmail.com is in Core Team)
 update public.profiles

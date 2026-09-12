@@ -15,6 +15,7 @@ export type Database = {
           is_public: boolean;
           avatar_url: string;
           display_order: number;
+          section: 'core' | 'contributor';
           updated_at: string;
         };
         Insert: Partial<{
@@ -142,7 +143,28 @@ export type Database = {
         }>;
         Update: Partial<Record<string, unknown>>;
       };
-    media_showcase: {
+      media: {
+        Row: {
+          id: string;
+          title: string;
+          url: string;
+          type: 'image' | 'video';
+          caption: string;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: Partial<{
+          id: string;
+          title: string;
+          url: string;
+          type: 'image' | 'video';
+          caption: string;
+          display_order: number;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+      media_showcase: {
         Row: {
           id: string;
           title: string;

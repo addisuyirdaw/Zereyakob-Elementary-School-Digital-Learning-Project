@@ -16,7 +16,7 @@ import { useLang } from "@/lib/i18n/LanguageProvider";
 import { ContactForm } from "@/components/contact-form";
 import { PartnersGrid } from "@/components/partners";
 import { ClubBanner } from "@/components/club-banner";
-import { MediaCarousel } from "@/components/media-carousel";
+import { PhotoGalleryGrid } from "@/components/public-gallery";
 import { MediaInterviews } from "@/components/media-interviews";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -86,9 +86,20 @@ export default function LandingPage() {
 
   return (
     <div className="overflow-hidden">
-      {/* Media showcase — full-width immersive institutional slider */}
-      <section id="media" className="w-full pt-16 sm:pt-20">
-        <MediaCarousel />
+      {/* Photo Gallery — dedicated responsive grid (no forced auto-carousel) */}
+      <section id="gallery" className="mx-auto max-w-7xl px-4 pt-16 pb-12 sm:px-6 sm:pt-20 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center mb-10">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-royal-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-royal-700">
+            {lang === "en" ? "Photo Gallery" : "የፎቶ ጋለሪ"}
+          </span>
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            {t("md.gallery.title")}
+          </h2>
+          <p className="mt-3 leading-relaxed text-slate-600">
+            {t("md.gallery.subtitle")}
+          </p>
+        </div>
+        <PhotoGalleryGrid />
       </section>
 
       {/* Community impact — DBU Club Connect cross-promotion */}

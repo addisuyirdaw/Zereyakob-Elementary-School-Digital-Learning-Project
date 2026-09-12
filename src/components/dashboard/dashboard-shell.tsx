@@ -10,6 +10,7 @@ import {
   Images,
   LayoutGrid,
   LogOut,
+  Megaphone,
   Menu,
   Settings,
   UserCog,
@@ -30,7 +31,7 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const { t } = useLang();
-  const { profile, signOut, user, isAdmin } = useDashboard();
+  const { profile, signOut, user, isAdmin, isSuperAdmin } = useDashboard();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -47,6 +48,9 @@ export function DashboardShell({
       : []),
     ...(isAdmin
       ? [{ href: "/dashboard/media", label: t("dash.media"), icon: <Images className="h-4 w-4" aria-hidden /> }]
+      : []),
+    ...(isSuperAdmin
+      ? [{ href: "/dashboard/announcements", label: t("dash.announcements"), icon: <Megaphone className="h-4 w-4" aria-hidden /> }]
       : []),
     { href: "/dashboard/attendance", label: t("dash.attendance"), icon: <CalendarCheck2 className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/directory", label: t("dash.directory"), icon: <BarChart3 className="h-4 w-4" aria-hidden /> },

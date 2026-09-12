@@ -264,6 +264,7 @@ export const translations: Record<string, Entry> = {
   "dash.students": { en: "Students", am: "ተማሪዎች" },
   "dash.staff": { en: "Staff & Admins", am: "ሰራተኞች እና አድሚኖች" },
   "dash.media": { en: "Media & Gallery", am: "ሚድያ እና ጋለሪ" },
+  "dash.announcements": { en: "Announcements", am: "ማስታወቂያዎች" },
   "dash.attendance": { en: "Attendance", am: "መገኘት" },
   "dash.directory": { en: "Directory", am: "ማውጫ" },
   "dash.reports": { en: "Reports", am: "ሪፖርቶች" },
@@ -465,6 +466,21 @@ export const translations: Record<string, Entry> = {
     en: "Shows an avatar, name, profession and bio card on the public Core Team section.",
     am: "በህዝብ ዋና ቡድን ክፍል ላይ የፎቶ፣ ስም፣ ሙያ እና መግለጫ ካርድ ያሳያል።",
   },
+  "sf.displayOrder": { en: "Display order", am: "የማሳያ ቅደም ተከተል" },
+  "sf.displayOrderHint": {
+    en: "Display priority within this section (1 = first, 2 = second, etc.).",
+    am: "በዚህ ክፍል ውስጥ የማሳያ ቅደም ተከተል (1 = መጀመሪያ፣ 2 = ሁለተኛ፣ ወዘተ)።",
+  },
+  "sf.section": { en: "Directory Section", am: "የማውጫ ክፍል" },
+  "sf.sectionCore": { en: "Core Team", am: "ዋና ቡድን" },
+  "sf.sectionContributor": {
+    en: "Project Contributors & Interns",
+    am: "የፕሮጀክት አስተዋፅዖ አበርካቾች እና ሰልጣኞች",
+  },
+  "sf.sectionHint": {
+    en: "Choose which public section this member appears under.",
+    am: "ይህ አባል በየትኛው የህዝብ ክፍል እንደሚታይ ይምረጡ።",
+  },
 
   // ── Media Showcase ─────────────────────────────────────────────────────────
   "md.title": { en: "Media & Gallery", am: "ሚድያ እና ጋለሪ" },
@@ -489,8 +505,8 @@ export const translations: Record<string, Entry> = {
     am: "መጫን አልተሳካም — ፋይሉን ያረጋግጡ እና እንደገና ይሞክሩ።",
   },
   "md.uploadTooLarge": {
-    en: "File is too large (max 15 MB).",
-    am: "ፋይሉ በጣም ትልቅ ነው (ከፍተኛ 15 MB)።",
+    en: "File is too large (max 50 MB).",
+    am: "ፋይሉ በጣም ትልቅ ነው (ከፍተኛ 50 MB)።",
   },
   "md.uploadSuccess": { en: "File uploaded", am: "ፋይል ተጭኗል" },
   "md.uploadHint": {
@@ -529,6 +545,12 @@ export const translations: Record<string, Entry> = {
     en: "Media is being prepared — check back soon.",
     am: "ሚድያ በዝግጅት ላይ ነው — በቅርቡ ይመልሱ።",
   },
+  "gallery.view": { en: "View photo", am: "ፎቶ ይመልከቱ" },
+  "gallery.close": { en: "Close preview", am: "ቅድመ እይታ ዝጋ" },
+  "gallery.prev": { en: "Previous photo", am: "ቀዳሚ ፎቶ" },
+  "gallery.next": { en: "Next photo", am: "ቀጣይ ፎቶ" },
+  "gallery.photoCount": { en: "Photo {current} of {total}", am: "ፎቶ {current} ከ {total}" },
+  "gallery.allPhotos": { en: "Campus & Learning Gallery", am: "የትምህርት ቤት እና የመማሪያ ጋለሪ" },
   "carousel.explore": { en: "Explore", am: "ያስሱ" },
   "carousel.prev": { en: "Previous slide", am: "ቀዳሚ ስላይድ" },
   "carousel.next": { en: "Next slide", am: "ቀጣይ ስላይድ" },

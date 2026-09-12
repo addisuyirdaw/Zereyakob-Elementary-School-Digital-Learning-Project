@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { initials } from "@/lib/utils";
 import { useLang } from "@/lib/i18n/LanguageProvider";
+import { ExpandableText } from "@/components/expandable-bio";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -21,12 +22,27 @@ export function PublicContributors() {
         if (!cancelled) setLoaded(true);
         return;
       }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("is_public", true)
-        .gte("display_order", 10)
+        .eq("section", "contributor")
         .order("display_order", { ascending: true });
+
+      if (error) {
+        const fallback = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("is_public", true)
+          .gte("display_order", 10)
+          .order("display_order", { ascending: true });
+        if (!cancelled) {
+          setMembers(fallback.data ?? []);
+          setLoaded(true);
+        }
+        return;
+      }
+
       if (!cancelled) {
         setMembers(data ?? []);
         setLoaded(true);
@@ -39,34 +55,6 @@ export function PublicContributors() {
 
   if (!loaded || members.length === 0) return null;
 
-  const getRoleBadge = (member: Profile) => {
-    const prof = (member.profession || "").toLowerCase();
-    const order = member.display_order;
-
-    if (order === 10 || prof.includes("teacher") || prof.includes("instructor") || member.role === "teacher") {
-      return {
-        label: lang === "en" ? "Lead Teacher" : "ዋና መምህር",
-        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      };
-    }
-    if (order === 11 || prof.includes("lead") || member.role === "super_admin") {
-      return {
-        label: lang === "en" ? "Project Lead" : "የፕሮጀክት መሪ",
-        className: "bg-violet-50 text-violet-700 border-violet-200",
-      };
-    }
-    if (order === 12 || order === 13 || prof.includes("intern")) {
-      return {
-        label: lang === "en" ? "Former Intern" : "የቀድሞ ሰልጣኝ",
-        className: "bg-amber-50 text-amber-800 border-amber-200",
-      };
-    }
-    return {
-      label: lang === "en" ? "Contributor" : "አስተዋፅዖ አበርካች",
-      className: "bg-royal-50 text-royal-700 border-royal-200",
-    };
-  };
-
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {members.map((member) => {
@@ -74,7 +62,6 @@ export function PublicContributors() {
           [member.first_name, member.last_name].filter(Boolean).join(" ") ||
           member.email;
         const profession = member.profession || member.title;
-        const badge = getRoleBadge(member);
 
         return (
           <div
@@ -82,7 +69,7 @@ export function PublicContributors() {
             className="group flex flex-col justify-between rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-xl shadow-slate-900/5 transition hover:-translate-y-1 hover:border-royal-300 hover:shadow-2xl hover:shadow-royal-700/10"
           >
             <div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 {member.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -96,26 +83,37 @@ export function PublicContributors() {
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate font-extrabold text-slate-900">{fullName}</h3>
-                  </div>
-                  <span
-                    className={`mt-1 inline-block rounded-md border px-2 py-0.5 text-[11px] font-bold tracking-wide ${badge.className}`}
-                  >
-                    {badge.label}
-                  </span>
-                  {profession && (
-                    <p className="mt-1 truncate text-xs font-semibold text-slate-500">
-                      {profession}
-                    </p>
+                  <h3 className="font-extrabold text-slate-900 leading-snug break-words">
+                    {fullName}
+                  </h3>
+                  {profession ? (
+                    <div className="mt-1">
+                      <ExpandableText
+                        text={profession}
+                        lines={2}
+                        className="text-xs sm:text-sm font-semibold text-royal-700 leading-snug"
+                        readMoreLabel={lang === "en" ? "Read more" : "ተጨማሪ"}
+                        showLessLabel={lang === "en" ? "Show less" : "አሳጥር"}
+                      />
+                    </div>
+                  ) : (
+                    <span className="mt-1 inline-block rounded-md border border-royal-200 bg-royal-50 px-2 py-0.5 text-[11px] font-bold text-royal-700">
+                      {lang === "en" ? "Contributor" : "አስተዋፅዖ አበርካች"}
+                    </span>
                   )}
                 </div>
               </div>
 
               {member.bio && (
-                <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">
-                  {member.bio}
-                </p>
+                <div className="mt-3 border-t border-slate-100/80 pt-2.5">
+                  <ExpandableText
+                    text={member.bio}
+                    lines={3}
+                    className="text-sm leading-relaxed text-slate-500"
+                    readMoreLabel={lang === "en" ? "Read more" : "ተጨማሪ አንብብ"}
+                    showLessLabel={lang === "en" ? "Show less" : "አሳጥር"}
+                  />
+                </div>
               )}
             </div>
           </div>

@@ -21,6 +21,8 @@ const emptyForm = {
   bio: "",
   avatar_url: "",
   is_public: false,
+  display_order: 1,
+  section: "core" as "core" | "contributor",
 };
 
 export function StaffFormModal({
@@ -48,11 +50,15 @@ export function StaffFormModal({
               email: member.email,
               first_name: member.first_name,
               last_name: member.last_name,
-              role: member.role === "admin" || member.role === "staff" ? member.role : "teacher",
+              role: member.role || "teacher",
               profession: member.profession,
               bio: member.bio,
               avatar_url: member.avatar_url,
               is_public: member.is_public,
+              display_order: member.display_order ?? 1,
+              section:
+                (member.section as "core" | "contributor") ||
+                ((member.display_order ?? 0) >= 10 ? "contributor" : "core"),
             }
           : emptyForm
       );
@@ -81,6 +87,8 @@ export function StaffFormModal({
         bio: form.bio.trim(),
         avatar_url: form.avatar_url.trim(),
         is_public: form.is_public,
+        display_order: Number(form.display_order) || 1,
+        section: form.section,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -159,7 +167,15 @@ export function StaffFormModal({
             <Input required label={t("profile.lastName")} value={form.last_name} onChange={set("last_name")} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select label={t("sf.role")} value={form.role} onChange={set("role")}>
+            <Select
+              label={t("sf.role")}
+              value={form.role}
+              onChange={set("role")}
+              disabled={member?.role === "super_admin"}
+            >
+              {member?.role === "super_admin" && (
+                <option value="super_admin">{t("role.super_admin")}</option>
+              )}
               <option value="admin">{t("role.admin")}</option>
               <option value="teacher">{t("role.teacher")}</option>
               <option value="staff">{t("role.staff")}</option>
@@ -213,24 +229,64 @@ export function StaffFormModal({
               onChange={photoUpload}
             />
           </div>
-          <label
-            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm transition ${
-              form.is_public
-                ? "border-royal-400 bg-royal-50"
-                : "border-slate-200 bg-white hover:border-royal-300"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={form.is_public}
-              onChange={(e) => setForm((previous) => ({ ...previous, is_public: e.target.checked }))}
-              className="mt-0.5 h-4 w-4 accent-royal-700"
-            />
-            <span>
-              <span className="font-bold text-slate-900">{t("sf.publish")}</span>
-              <span className="mt-0.5 block text-xs text-slate-500">{t("sf.publishHint")}</span>
-            </span>
-          </label>
+          <div className="space-y-3">
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm transition ${
+                form.is_public
+                  ? "border-royal-400 bg-royal-50"
+                  : "border-slate-200 bg-white hover:border-royal-300"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={form.is_public}
+                onChange={(e) => setForm((previous) => ({ ...previous, is_public: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-royal-700"
+              />
+              <span>
+                <span className="font-bold text-slate-900">{t("sf.publish")}</span>
+                <span className="mt-0.5 block text-xs text-slate-500">{t("sf.publishHint")}</span>
+              </span>
+            </label>
+
+            {form.is_public && (
+              <div className="grid grid-cols-2 gap-3 items-start rounded-xl border border-royal-100 bg-royal-50/40 p-3.5">
+                <div className="col-span-2 sm:col-span-1">
+                  <Select
+                    label={t("sf.section")}
+                    value={form.section}
+                    onChange={(e) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        section: e.target.value as "core" | "contributor",
+                      }))
+                    }
+                  >
+                    <option value="core">{t("sf.sectionCore")}</option>
+                    <option value="contributor">{t("sf.sectionContributor")}</option>
+                  </Select>
+                  <p className="mt-1 text-xs text-slate-400">{t("sf.sectionHint")}</p>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    {t("sf.displayOrder")}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={999}
+                    value={form.display_order}
+                    onChange={(e) =>
+                      setForm((previous) => ({ ...previous, display_order: Number(e.target.value) }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/30"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">{t("sf.displayOrderHint")}</p>
+                </div>
+              </div>
+            )}
+          </div>
           {!member && <p className="text-xs text-slate-400">{t("sf.inviteHint")}</p>}
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">

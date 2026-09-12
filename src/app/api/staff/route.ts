@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, adminConfigured } from "@/lib/supabase/admin";
+import { sendAdminWelcomeEmail } from "@/lib/email";
 
-const STAFF_ROLES = ["admin", "teacher", "staff"] as const;
+const STAFF_ROLES = ["super_admin", "admin", "teacher", "staff"] as const;
 type StaffRole = (typeof STAFF_ROLES)[number];
 
 function json(body: unknown, status = 200) {
@@ -46,6 +47,8 @@ export async function POST(request: Request) {
     bio?: string;
     avatar_url?: string;
     is_public?: boolean;
+    display_order?: number;
+    section?: "core" | "contributor";
   };
   try {
     body = await request.json();
@@ -65,13 +68,18 @@ export async function POST(request: Request) {
     return json({ code: "invalid_fields" }, 400);
   }
 
-  const details: Record<string, string | boolean> = {
+  const details: Record<string, string | boolean | number> = {
     profession: (body.profession ?? "").trim(),
     title: (body.title ?? "").trim(),
     bio: (body.bio ?? "").trim(),
     avatar_url: (body.avatar_url ?? "").trim(),
     is_public: body.is_public === true,
+    display_order: body.display_order !== undefined ? Number(body.display_order) || 100 : 100,
+    section: body.section === "contributor" ? "contributor" : "core",
   };
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3003";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
   // If an account already exists for this email, link it to the staff role
   // instead of creating a duplicate.
@@ -81,17 +89,38 @@ export async function POST(request: Request) {
     .eq("email", email)
     .maybeSingle();
   if (linked?.id) {
-    const { error } = await admin
-      .from("profiles")
-      .update({
-        role,
-        first_name: firstName,
-        last_name: lastName,
-        ...details,
-      })
-      .eq("id", linked.id);
+    const updateData: Record<string, unknown> = { role, first_name: firstName, last_name: lastName, ...details };
+    let { error } = await admin.from("profiles").update(updateData).eq("id", linked.id);
+    if (error && error.message?.includes("'section' column")) {
+      delete updateData.section;
+      const retry = await admin.from("profiles").update(updateData).eq("id", linked.id);
+      error = retry.error;
+    }
     if (error) return json({ code: "db_error", message: error.message }, 500);
-    return json({ ok: true, created: false, id: linked.id });
+
+    // Send automated welcome email for assigned/linked admin
+    let loginUrl = `${siteUrl}/login`;
+    try {
+      const { data: linkData } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${siteUrl}/dashboard` },
+      });
+      if (linkData?.properties?.action_link) {
+        loginUrl = linkData.properties.action_link;
+      }
+    } catch {
+      // fallback
+    }
+
+    const emailRes = await sendAdminWelcomeEmail({
+      to: email,
+      name: fullName,
+      role,
+      loginUrl,
+    });
+
+    return json({ ok: true, created: false, id: linked.id, email_sent: emailRes.success });
   }
 
   const { data, error } = await admin.auth.admin.createUser({
@@ -101,13 +130,42 @@ export async function POST(request: Request) {
   });
   if (error) return json({ code: "create_failed", message: error.message }, 400);
 
-  const { error: profileError } = await admin
+  const profileData: Record<string, unknown> = { role, first_name: firstName, last_name: lastName, ...details };
+  let { error: profileError } = await admin
     .from("profiles")
-    .update({ role, first_name: firstName, last_name: lastName, ...details })
+    .update(profileData)
     .eq("id", data.user.id);
+  if (profileError && profileError.message?.includes("'section' column")) {
+    delete profileData.section;
+    const retry = await admin.from("profiles").update(profileData).eq("id", data.user.id);
+    profileError = retry.error;
+  }
   if (profileError) return json({ code: "db_error", message: profileError.message }, 500);
 
-  return json({ ok: true, created: true, id: data.user.id });
+  // Generate invitation link with password setup for the new user
+  let loginUrl = `${siteUrl}/login`;
+  try {
+    const { data: linkData } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo: `${siteUrl}/auth/update-password` },
+    });
+    if (linkData?.properties?.action_link) {
+      loginUrl = linkData.properties.action_link;
+    }
+  } catch {
+    // fallback
+  }
+
+  // Trigger automated admin welcome email
+  const emailRes = await sendAdminWelcomeEmail({
+    to: email,
+    name: fullName,
+    role,
+    loginUrl,
+  });
+
+  return json({ ok: true, created: true, id: data.user.id, email_sent: emailRes.success });
 }
 
 export async function PATCH(request: Request) {
@@ -129,11 +187,26 @@ export async function PATCH(request: Request) {
     avatar_url?: string;
     is_public?: boolean;
     display_order?: number;
+    section?: "core" | "contributor";
+    reorder?: Array<{ id: string; display_order: number }>;
+    send_welcome_email?: boolean;
   };
   try {
     body = await request.json();
   } catch {
     return json({ code: "invalid_body" }, 400);
+  }
+
+  if (Array.isArray(body.reorder)) {
+    const valid = body.reorder.filter((item) => item && typeof item.id === "string");
+    const updates = valid.map((item) =>
+      admin
+        .from("profiles")
+        .update({ display_order: Number(item.display_order) || 0 })
+        .eq("id", item.id)
+    );
+    await Promise.all(updates);
+    return json({ ok: true });
   }
 
   const id = body.id ?? "";
@@ -146,9 +219,10 @@ export async function PATCH(request: Request) {
     }
     const { data: target } = await admin.from("profiles").select("email").eq("id", id).maybeSingle();
     if (target?.email === "addisulal@gmail.com" || target?.email === "addisul@gmail.com") {
-      return json({ code: "forbidden", message: "Bootstrap admin role cannot be changed" }, 403);
+      profilePatch.role = "super_admin";
+    } else {
+      profilePatch.role = body.role;
     }
-    profilePatch.role = body.role;
   }
   if (body.first_name !== undefined) profilePatch.first_name = body.first_name.trim();
   if (body.last_name !== undefined) profilePatch.last_name = body.last_name.trim();
@@ -158,6 +232,7 @@ export async function PATCH(request: Request) {
   if (body.avatar_url !== undefined) profilePatch.avatar_url = body.avatar_url.trim();
   if (body.is_public !== undefined) profilePatch.is_public = body.is_public === true;
   if (body.display_order !== undefined) profilePatch.display_order = Number(body.display_order) || 0;
+  if (body.section !== undefined) profilePatch.section = body.section === "contributor" ? "contributor" : "core";
 
   if (body.email !== undefined && (body.email ?? "").trim().toLowerCase() !== "") {
     const { error: emailError } = await admin.auth.admin.updateUserById(id, {
@@ -169,8 +244,38 @@ export async function PATCH(request: Request) {
   }
 
   if (Object.keys(profilePatch).length > 0) {
-    const { error } = await admin.from("profiles").update(profilePatch).eq("id", id);
+    let { error } = await admin.from("profiles").update(profilePatch).eq("id", id);
+    if (error && error.message?.includes("'section' column")) {
+      delete profilePatch.section;
+      const retry = await admin.from("profiles").update(profilePatch).eq("id", id);
+      error = retry.error;
+    }
     if (error) return json({ code: "db_error", message: error.message }, 500);
+  }
+
+  if (body.send_welcome_email) {
+    const { data: target } = await admin.from("profiles").select("email, first_name, last_name, role").eq("id", id).maybeSingle();
+    if (target?.email) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3003";
+      let loginUrl = `${siteUrl}/login`;
+      try {
+        const { data: linkData } = await admin.auth.admin.generateLink({
+          type: "magiclink",
+          email: target.email,
+          options: { redirectTo: `${siteUrl}/dashboard` },
+        });
+        if (linkData?.properties?.action_link) {
+          loginUrl = linkData.properties.action_link;
+        }
+      } catch {}
+
+      await sendAdminWelcomeEmail({
+        to: target.email,
+        name: [target.first_name, target.last_name].filter(Boolean).join(" ") || "Admin",
+        role: target.role,
+        loginUrl,
+      });
+    }
   }
 
   return json({ ok: true });
