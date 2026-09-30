@@ -18,6 +18,10 @@ import { PartnersGrid } from "@/components/partners";
 import { ClubBanner } from "@/components/club-banner";
 import { PhotoGalleryGrid } from "@/components/public-gallery";
 import { MediaInterviews } from "@/components/media-interviews";
+import { HeroCarousel } from "@/components/hero-carousel";
+import { ImpactCards } from "@/components/impact-cards";
+import { PublicTeam } from "@/components/public-team";
+import { PublicContributors } from "@/components/public-contributors";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -85,9 +89,25 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden bg-slate-50">
+      {/* Immersive Hero Carousel */}
+      <HeroCarousel />
+
+      {/* Impact Stories Cards */}
+      <section className="mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center mb-12">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-royal-100 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-royal-800 shadow-sm">
+            {lang === "en" ? "Our Impact" : "የእኛ ተጽዕኖ"}
+          </span>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-2">
+            {lang === "en" ? "Stories from the Pilot" : "ከሙከራው ፕሮግራም ታሪኮች"}
+          </h2>
+        </div>
+        <ImpactCards />
+      </section>
+
       {/* Photo Gallery — dedicated responsive grid (no forced auto-carousel) */}
-      <section id="gallery" className="mx-auto max-w-7xl px-4 pt-16 pb-12 sm:px-6 sm:pt-20 lg:px-8">
+      <section id="gallery" className="mx-auto max-w-7xl px-4 pt-20 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center mb-10">
           <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-royal-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-royal-700">
             {lang === "en" ? "Photo Gallery" : "የፎቶ ጋለሪ"}
@@ -100,6 +120,39 @@ export default function LandingPage() {
           </p>
         </div>
         <PhotoGalleryGrid />
+      </section>
+
+      {/* Core Team */}
+      <section id="team" className="mx-auto max-w-7xl px-4 pt-12 pb-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center mb-10">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-royal-100 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-royal-800 shadow-sm">
+            {lang === "en" ? "Our People" : "የእኛ ሰዎች"}
+          </span>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-2">
+            {lang === "en" ? "Core Team" : "ዋና ቡድን"}
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-slate-600">
+            {lang === "en" 
+              ? "The dedicated leaders and educators driving the digital learning initiative forward." 
+              : "የዲጂታል ትምህርት ፈጠራን ወደፊት የሚያራምዱ ቁርጠኛ መሪዎች እና አስተማሪዎች።"}
+          </p>
+        </div>
+        <PublicTeam />
+      </section>
+
+      {/* Project Contributors */}
+      <section id="contributors" className="mx-auto max-w-7xl px-4 pt-8 pb-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+            {lang === "en" ? "Project Contributors & Interns" : "የፕሮጀክት አስተዋፅዖ አበርካቾች እና ሰልጣኞች"}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            {lang === "en" 
+              ? "Instructors, project leads, former interns, and dedicated team members." 
+              : "አስተማሪዎች፣ የፕሮጀክት መሪዎች፣ የቀድሞ ሰልጣኞች እና ቁርጠኛ የቡድን አባላት።"}
+          </p>
+        </div>
+        <PublicContributors />
       </section>
 
       {/* Community impact — DBU Club Connect cross-promotion */}

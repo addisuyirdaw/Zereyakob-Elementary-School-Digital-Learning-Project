@@ -121,24 +121,56 @@ export function PhotoGalleryGrid({ compact = false }: { compact?: boolean }) {
     );
   }
 
+  let displayPhotos = photos;
   if (photos.length === 0) {
-    return (
-      <div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center shadow-sm">
-        <ImageIcon className="mx-auto h-10 w-10 text-royal-400" />
-        <h4 className="mt-3 text-sm font-bold text-slate-700">
-          {lang === "en" ? "Photo Gallery Coming Soon" : "የፎቶ ጋለሪ በቅርቡ ይቀርባል"}
-        </h4>
-        <p className="mt-1 text-xs text-slate-500">
-          {lang === "en"
-            ? "New photos of the campus and classrooms will be published here."
-            : "የትምህርት ቤቱ እና የክፍል ውስጥ ፎቶዎች በቅርቡ እዚህ ይለጠፋሉ።"}
-        </p>
-      </div>
-    );
+    displayPhotos = [
+      {
+        id: "placeholder-1",
+        title: "Classroom Innovation",
+        url: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=1200",
+        caption: "Students engaging with digital tools.",
+        display_order: 1,
+      },
+      {
+        id: "placeholder-2",
+        title: "Teacher Mentorship",
+        url: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=1200",
+        caption: "Guiding the next generation of thinkers.",
+        display_order: 2,
+      },
+      {
+        id: "placeholder-3",
+        title: "Joy of Learning",
+        url: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=1200",
+        caption: "A positive environment for academic growth.",
+        display_order: 3,
+      },
+      {
+        id: "placeholder-4",
+        title: "Community Engagement",
+        url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200",
+        caption: "Building bonds through university partnerships.",
+        display_order: 4,
+      },
+      {
+        id: "placeholder-5",
+        title: "Focused Study",
+        url: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=1200",
+        caption: "Concentration and dedication in every session.",
+        display_order: 5,
+      },
+      {
+        id: "placeholder-6",
+        title: "Digital Future",
+        url: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=1200",
+        caption: "Equipped for the challenges of tomorrow.",
+        display_order: 6,
+      }
+    ];
   }
 
-  const displayedPhotos = compact ? photos.slice(0, 6) : photos;
-  const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
+  const displayedPhotos = compact ? displayPhotos.slice(0, 6) : displayPhotos;
+  const activePhoto = activePhotoIndex !== null ? displayPhotos[activePhotoIndex] : null;
 
   return (
     <div>
