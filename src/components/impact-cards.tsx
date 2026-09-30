@@ -48,31 +48,22 @@ export function ImpactCards() {
         <a
           key={story.id}
           href={story.link}
-          className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-xl shadow-slate-900/5 hover:shadow-2xl hover:shadow-royal-900/15 transition-all duration-300 border border-slate-100 hover:-translate-y-2"
+          className="group flex flex-col justify-between overflow-hidden rounded-3xl bg-white p-8 shadow-xl shadow-slate-900/5 hover:shadow-2xl hover:shadow-royal-900/15 transition-all duration-300 border border-slate-100 hover:-translate-y-2 hover:border-royal-200"
         >
-          <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-            <img
-              src={story.image}
-              alt={lang === "en" ? story.titleEn : story.titleAm}
-              className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110"
-            />
-            <div className="absolute top-4 left-4 z-10">
-              <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-royal-700 backdrop-blur-md shadow-sm border border-white/50">
-                {lang === "en" ? story.categoryEn : story.categoryAm}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col flex-1 p-6 lg:p-8">
-            <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-royal-700 transition-colors">
+          <div>
+            <span className="inline-flex items-center rounded-full bg-royal-50 px-3 py-1 text-xs font-bold text-royal-700 shadow-sm border border-royal-100 mb-5">
+              {lang === "en" ? story.categoryEn : story.categoryAm}
+            </span>
+            <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-royal-700 transition-colors leading-tight">
               {lang === "en" ? story.titleEn : story.titleAm}
             </h3>
-            <p className="mt-3 text-sm text-slate-600 line-clamp-3 flex-1 leading-relaxed">
+            <p className="mt-4 text-sm text-slate-600 line-clamp-4 leading-relaxed">
               {lang === "en" ? story.descEn : story.descAm}
             </p>
-            <div className="mt-6 flex items-center text-sm font-bold text-royal-600">
-              {lang === "en" ? "Read story" : "ታሪኩን ያንብቡ"}
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-2" />
-            </div>
+          </div>
+          <div className="mt-8 flex items-center text-sm font-bold text-royal-600">
+            {lang === "en" ? "Read story" : "ታሪኩን ያንብቡ"}
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-2" />
           </div>
         </a>
       ))}

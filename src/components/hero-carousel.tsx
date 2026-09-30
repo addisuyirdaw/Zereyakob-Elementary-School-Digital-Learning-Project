@@ -6,34 +6,10 @@ import { useLang } from "@/lib/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
-const DEFAULT_HERO_SLIDES = [
-  {
-    image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=2000",
-    titleEn: "Empowering Young Minds",
-    titleAm: "የወጣቶችን አእምሮ ማብቃት",
-    subtitleEn: "A joyful, rigorous and technology-enabled primary education.",
-    subtitleAm: "ደስታና ጥራት ያለው፣ በቴክኖሎጂ የታገዘ የአንደኛ ደረጃ ትምህርት።",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=2000",
-    titleEn: "Community Powered",
-    titleAm: "በማህበረሰብ የተጎላበተ",
-    subtitleEn: "Supported by Debre Berhan University and dedicated partners.",
-    subtitleAm: "በደብረ ብርሃን ዩኒቨርሲቲ እና በቅን አጋሮች የተደገፈ።",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=2000",
-    titleEn: "Digital Learning Future",
-    titleAm: "የዲጂታል ትምህርት ወደፊት",
-    subtitleEn: "Building confident, curious citizens for tomorrow.",
-    subtitleAm: "በራስ የመተማመንና የማወቅ ጉጉት ያላቸው የነገ ዜጎችን ማፍራት።",
-  }
-];
-
 export function HeroCarousel() {
   const { lang } = useLang();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [slides, setSlides] = useState<any[]>(DEFAULT_HERO_SLIDES);
+  const [slides, setSlides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,6 +78,8 @@ export function HeroCarousel() {
 
   const next = () => setCurrentIndex((prev) => (prev + 1) % slides.length);
   const prev = () => setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
+
+  if (!loading && slides.length === 0) return null;
 
   return (
     <div className="relative h-[70vh] min-h-[500px] w-full overflow-hidden bg-slate-900 group">

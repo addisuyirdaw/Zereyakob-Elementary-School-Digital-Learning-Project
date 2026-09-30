@@ -121,56 +121,18 @@ export function PhotoGalleryGrid({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  let displayPhotos = photos;
   if (photos.length === 0) {
-    displayPhotos = [
-      {
-        id: "placeholder-1",
-        title: "Classroom Innovation",
-        url: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=1200",
-        caption: "Students engaging with digital tools.",
-        display_order: 1,
-      },
-      {
-        id: "placeholder-2",
-        title: "Teacher Mentorship",
-        url: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=1200",
-        caption: "Guiding the next generation of thinkers.",
-        display_order: 2,
-      },
-      {
-        id: "placeholder-3",
-        title: "Joy of Learning",
-        url: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=1200",
-        caption: "A positive environment for academic growth.",
-        display_order: 3,
-      },
-      {
-        id: "placeholder-4",
-        title: "Community Engagement",
-        url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200",
-        caption: "Building bonds through university partnerships.",
-        display_order: 4,
-      },
-      {
-        id: "placeholder-5",
-        title: "Focused Study",
-        url: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=1200",
-        caption: "Concentration and dedication in every session.",
-        display_order: 5,
-      },
-      {
-        id: "placeholder-6",
-        title: "Digital Future",
-        url: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=1200",
-        caption: "Equipped for the challenges of tomorrow.",
-        display_order: 6,
-      }
-    ];
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-slate-400 bg-slate-50/50 rounded-3xl border border-slate-100">
+        <ImageIcon className="h-12 w-12 text-slate-200 mb-3" />
+        <p className="text-sm font-semibold">{t("gallery.empty") || "Photos coming soon!"}</p>
+        <p className="text-xs mt-1 text-slate-400">Real community moments will appear here once uploaded.</p>
+      </div>
+    );
   }
 
-  const displayedPhotos = compact ? displayPhotos.slice(0, 6) : displayPhotos;
-  const activePhoto = activePhotoIndex !== null ? displayPhotos[activePhotoIndex] : null;
+  const displayedPhotos = compact ? photos.slice(0, 6) : photos;
+  const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
 
   return (
     <div>
