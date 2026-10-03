@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   CalendarCheck2,
+  Database,
   GraduationCap,
   HeartHandshake,
   Images,
@@ -30,7 +31,7 @@ export function DashboardShell({
 }: {
   children: ReactNode;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { profile, signOut, user, isAdmin, isSuperAdmin } = useDashboard();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -55,6 +56,7 @@ export function DashboardShell({
     { href: "/dashboard/attendance", label: t("dash.attendance"), icon: <CalendarCheck2 className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/directory", label: t("dash.directory"), icon: <BarChart3 className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/reports", label: t("dash.reports"), icon: <GraduationCap className="h-4 w-4" aria-hidden /> },
+    { href: "/dashboard/khan-data", label: lang === "en" ? "Khan Data" : "ካን መረጃ", icon: <Database className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/support", label: t("dash.support"), icon: <HeartHandshake className="h-4 w-4" aria-hidden /> },
     { href: "/dashboard/settings", label: t("dash.profile"), icon: <Settings className="h-4 w-4" aria-hidden /> },
   ];
