@@ -12,14 +12,15 @@ import type { Database } from "@/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 
-const grades = ["1", "2", "3", "4", "5"];
+const defaultGrades = ["KG1", "KG2", "KG3", "1", "2", "3", "4", "5", "6", "7", "8"];
 
 const emptyForm = {
   first_name: "",
   last_name: "",
   gender: "male",
-  grade: "1",
-  section: "",
+  grade: "KG1",
+  section: "A",
+  status: "active",
   guardian_name: "",
   guardian_phone: "",
   address: "",
@@ -36,15 +37,18 @@ export function StudentFormModal({
   onClose,
   student,
   onSaved,
+  existingGrades = [],
 }: {
   open: boolean;
   onClose: () => void;
   student: Student | null;
   onSaved: () => void;
+  existingGrades?: string[];
 }) {
   const { t } = useLang();
   const [form, setForm] = useState<Record<string, string>>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [isCustomGrade, setIsCustomGrade] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -56,6 +60,7 @@ export function StudentFormModal({
               gender: student.gender,
               grade: student.grade,
               section: student.section,
+              status: student.status ?? "active",
               guardian_name: student.guardian_name,
               guardian_phone: student.guardian_phone,
               address: student.address,
@@ -85,7 +90,7 @@ export function StudentFormModal({
       setSaving(false);
       return;
     }
-    const payload = {
+    const basePayload: Record<string, unknown> = {
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       gender: form.gender,
@@ -102,13 +107,25 @@ export function StudentFormModal({
       notes: form.notes.trim(),
     };
 
-    const { error } = student
-      ? await supabase.from("students").update(payload).eq("id", student.id)
-      : await supabase.from("students").insert(payload);
+    if (form.status) {
+      basePayload.status = form.status;
+    }
+
+    let result = student
+      ? await supabase.from("students").update(basePayload).eq("id", student.id)
+      : await supabase.from("students").insert(basePayload);
+
+    // If status column is not yet in the remote database schema cache, retry without status
+    if (result.error && (result.error.code === "PGRST204" || result.error.message?.includes("status"))) {
+      delete basePayload.status;
+      result = student
+        ? await supabase.from("students").update(basePayload).eq("id", student.id)
+        : await supabase.from("students").insert(basePayload);
+    }
 
     setSaving(false);
-    if (error) {
-      console.error(error);
+    if (result.error) {
+      console.error("Student save error:", result.error);
       return;
     }
     onSaved();
@@ -135,19 +152,63 @@ export function StudentFormModal({
         <form onSubmit={submit} className="grid gap-4 px-6 py-6 sm:grid-cols-2">
           <Input required label={t("stu.firstName")} value={form.first_name} onChange={set("first_name")} />
           <Input required label={t("stu.lastName")} value={form.last_name} onChange={set("last_name")} />
-          <Select label={t("stu.gender")} value={form.gender} onChange={set("gender")}>
-            <option value="male">{t("common.male")}</option>
-            <option value="female">{t("common.female")}</option>
-            <option value="other">{t("common.other")}</option>
-          </Select>
           <div className="grid grid-cols-2 gap-3">
-            <Select label={t("stu.grade")} value={form.grade} onChange={set("grade")}>
-              {grades.map((grade) => (
-                <option key={grade} value={grade}>
-                  {grade}
-                </option>
-              ))}
+            <Select label={t("stu.gender")} value={form.gender} onChange={set("gender")}>
+              <option value="male">{t("common.male")}</option>
+              <option value="female">{t("common.female")}</option>
+              <option value="other">{t("common.other")}</option>
             </Select>
+            <Select label={t("att.status")} value={form.status} onChange={set("status")}>
+              <option value="active">Active</option>
+              <option value="transferred">Transferred</option>
+              <option value="graduated">Graduated</option>
+              <option value="inactive">Inactive</option>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {isCustomGrade ? (
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-700">{t("stu.grade")}</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomGrade(false);
+                      if (!form.grade) setForm((p) => ({ ...p, grade: "KG1" }));
+                    }}
+                    className="text-[11px] text-royal-600 hover:underline font-medium"
+                  >
+                    ← List
+                  </button>
+                </div>
+                <Input
+                  required
+                  placeholder="e.g. Pre-K, KG1, Grade 9"
+                  value={form.grade}
+                  onChange={set("grade")}
+                />
+              </div>
+            ) : (
+              <Select
+                label={t("stu.grade")}
+                value={form.grade}
+                onChange={(e) => {
+                  if (e.target.value === "__custom__") {
+                    setIsCustomGrade(true);
+                    setForm((p) => ({ ...p, grade: "" }));
+                  } else {
+                    set("grade")(e);
+                  }
+                }}
+              >
+                {Array.from(new Set([...defaultGrades, ...existingGrades, form.grade].filter(Boolean))).map((grade) => (
+                  <option key={grade} value={grade}>
+                    {grade}
+                  </option>
+                ))}
+                <option value="__custom__">+ Custom Grade…</option>
+              </Select>
+            )}
             <Input label={t("stu.section")} value={form.section} onChange={set("section")} />
           </div>
           <Input label={t("stu.guardian")} value={form.guardian_name} onChange={set("guardian_name")} />

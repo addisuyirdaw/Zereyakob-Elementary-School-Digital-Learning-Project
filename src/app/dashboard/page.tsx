@@ -28,7 +28,8 @@ import { useDashboard } from "@/lib/dashboard-context";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/layout";
-import { todayInput } from "@/lib/utils";
+import { todayInput, toLocalDateInput } from "@/lib/utils";
+import { calculateAttendanceSummary } from "@/lib/attendance";
 import type { Database } from "@/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
@@ -51,12 +52,14 @@ export default function OverviewPage() {
         setLoading(false);
         return;
       }
+      const past31 = new Date();
+      past31.setDate(past31.getDate() - 31);
       const [studentsRes, attendanceRes, profilesRes] = await Promise.all([
         supabase.from("students").select("*").order("grade"),
         supabase
           .from("attendance")
           .select("*")
-          .gte("date", new Date(Date.now() - 31 * 86400000).toISOString().slice(0, 10))
+          .gte("date", toLocalDateInput(past31))
           .order("date", { ascending: true }),
         supabase
           .from("profiles")
@@ -76,9 +79,8 @@ export default function OverviewPage() {
 
   const today = todayInput();
   const todays = attendance.filter((a) => a.date === today);
-  const todayRate = todays.length
-    ? Math.round((todays.filter((a) => a.status !== "absent").length / todays.length) * 100)
-    : null;
+  const todaySummary = calculateAttendanceSummary(todays, 0);
+  const todayRate = todaySummary.rate;
 
   const avgByGrade = useMemo(() => {
     const map = new Map<string, { math: number; logic: number; lang: number; count: number }>();
@@ -102,14 +104,16 @@ export default function OverviewPage() {
 
   const trend = useMemo(() => {
     const days: { date: string; rate: number }[] = [];
+    const now = new Date();
     for (let i = 13; i >= 0; i--) {
-      const date = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const date = toLocalDateInput(d);
       const records = attendance.filter((a) => a.date === date);
+      const summary = calculateAttendanceSummary(records, 0);
       days.push({
         date,
-        rate: records.length
-          ? Math.round((records.filter((r) => r.status !== "absent").length / records.length) * 100)
-          : 0,
+        rate: summary.rate ?? 0,
       });
     }
     return days;

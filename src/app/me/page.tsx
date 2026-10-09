@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
+import { calculateAttendanceSummary } from "@/lib/attendance";
 import type { Database } from "@/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
@@ -54,7 +55,8 @@ export default function MePage() {
         const attendanceRes = await supabase
           .from("attendance")
           .select("*")
-          .eq("student_id", studentRes.data.id);
+          .eq("student_id", studentRes.data.id)
+          .order("date", { ascending: false });
         if (!cancelled) setAttendance(attendanceRes.data ?? []);
       }
       if (!cancelled) setLoading(false);
@@ -92,10 +94,8 @@ export default function MePage() {
     );
   }
 
-  const presentCount = attendance.filter((a) => a.status === "present").length;
-  const rate = attendance.length
-    ? Math.round((presentCount / attendance.length) * 100)
-    : 0;
+  const summary = calculateAttendanceSummary(attendance, 0);
+  const rate = summary.rate ?? 0;
 
   const scores = [
     { key: t("stu.math"), value: Number(student.math_score) },
@@ -120,7 +120,7 @@ export default function MePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-6">
         <Card>
           <CardContent className="px-6 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -131,13 +131,13 @@ export default function MePage() {
                     {student.first_name} {student.last_name}
                   </h1>
                   <p className="text-sm text-slate-500">
-                    {student.student_code} · grade {student.grade}
+                    {student.student_code} · {t("stu.grade")} {student.grade}
                     {student.section ? ` · ${student.section}` : ""}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <div className="rounded-xl bg-royal-50 px-4 py-2.5">
+                <div className="rounded-xl bg-royal-50 px-4 py-2.5 border border-royal-200/60">
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-royal-700">
                     <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden />
                     {t("stu.attendanceRate")}

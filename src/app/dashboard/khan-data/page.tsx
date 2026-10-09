@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowUpRight,
+  Award,
+  BarChart3,
   BookOpen,
   Calendar,
   CheckCircle2,
@@ -21,13 +24,18 @@ import {
   GraduationCap,
   Layers,
   Link2,
+  Medal,
   Plus,
   RefreshCw,
   Search,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
+  Trophy,
   Upload,
+  UserCheck,
   Users,
+  X,
 } from "lucide-react";
 import { useLang } from "@/lib/i18n/LanguageProvider";
 import { Button } from "@/components/ui/button";
@@ -36,19 +44,27 @@ import { PageHeader } from "@/components/ui/layout";
 import { downloadCsv, downloadJson } from "@/lib/csv";
 import { cn, formatDate } from "@/lib/utils";
 import {
+  getKhanDynamicFilterOptions,
   getKhanExportData,
   getKhanImports,
+  getKhanLeaderboard,
   getKhanLearningRecords,
+  getMonthlyProgressComparison,
   getSignedHtmlUrl,
+  getStudentLearningProfile,
   parseKhanUpload,
   saveKhanImport,
   type KhanExportRow,
   type KhanImportSummary,
   type KhanLearningRecordItem,
+  type LeaderboardEntry,
+  type MonthlyComparisonRow,
+  type StudentLearningProfile,
+  type UploadActionState,
 } from "./actions";
 import type { ParseResult } from "@/lib/khan-parser";
 
-type Tab = "history" | "explorer" | "upload";
+type Tab = "history" | "students" | "comparison" | "leaderboard" | "explorer" | "upload";
 
 export default function KhanDataPage() {
   const { t, lang } = useLang();
@@ -61,7 +77,30 @@ export default function KhanDataPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
+  const [parseState, setParseState] = useState<UploadActionState | null>(null);
+
+  // Student Profile state
+  const [selectedStudentSearch, setSelectedStudentSearch] = useState("");
+  const [selectedStudentName, setSelectedStudentName] = useState<string>("");
+  const [studentProfile, setStudentProfile] = useState<StudentLearningProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Monthly Comparison state
+  const [comparisonGrade, setComparisonGrade] = useState("all");
+  const [comparisonSubject, setComparisonSubject] = useState("all");
+  const [comparisonClass, setComparisonClass] = useState("all");
+  const [baselineDate, setBaselineDate] = useState("");
+  const [comparisonDate, setComparisonDate] = useState("");
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [comparisons, setComparisons] = useState<MonthlyComparisonRow[]>([]);
+  const [loadingComparisons, setLoadingComparisons] = useState(false);
+
+  // Leaderboard state
+  const [leaderboardGrade, setLeaderboardGrade] = useState("all");
+  const [leaderboardSubject, setLeaderboardSubject] = useState("all");
+  const [leaderboardSort, setLeaderboardSort] = useState<"completed" | "avgScore" | "highScores">("completed");
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
 
   // Explorer & pagination state
   const [records, setRecords] = useState<KhanLearningRecordItem[]>([]);
@@ -69,6 +108,8 @@ export default function KhanDataPage() {
   const [selectedImportId, setSelectedImportId] = useState<string>("all");
   const [filterStudent, setFilterStudent] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterGrade, setFilterGrade] = useState("all");
+  const [filterSubject, setFilterSubject] = useState("all");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
@@ -100,6 +141,8 @@ export default function KhanDataPage() {
       importId: selectedImportId === "all" ? undefined : selectedImportId,
       studentName: filterStudent.trim() || undefined,
       status: filterStatus === "all" ? undefined : filterStatus,
+      grade: filterGrade === "all" ? undefined : filterGrade,
+      subject: filterSubject === "all" ? undefined : filterSubject,
       search: searchKeyword.trim() || undefined,
       page,
       pageSize,
@@ -113,987 +156,760 @@ export default function KhanDataPage() {
       toast.error(res.error || t("common.error"));
     }
     setLoadingRecords(false);
-  }, [selectedImportId, filterStudent, filterStatus, searchKeyword, page, pageSize, t]);
+  }, [selectedImportId, filterStudent, filterStatus, filterGrade, filterSubject, searchKeyword, page, pageSize, t]);
+
+  const loadStudentProfile = useCallback(async (name: string) => {
+    if (!name) return;
+    setLoadingProfile(true);
+    const res = await getStudentLearningProfile(name);
+    if (res.success && res.profile) {
+      setStudentProfile(res.profile);
+    } else {
+      toast.error(res.error || "Failed to load student profile");
+    }
+    setLoadingProfile(false);
+  }, []);
+
+  const loadComparisons = useCallback(async () => {
+    setLoadingComparisons(true);
+    const res = await getMonthlyProgressComparison({
+      grade: comparisonGrade === "all" ? undefined : comparisonGrade,
+      subject: comparisonSubject === "all" ? undefined : comparisonSubject,
+      className: comparisonClass === "all" ? undefined : comparisonClass,
+      baselineDate: baselineDate || undefined,
+      comparisonDate: comparisonDate || undefined,
+    });
+
+    if (res.success) {
+      setComparisons(res.comparisons);
+      setAvailableDates(res.availableDates);
+      if (!baselineDate && res.baselineDateUsed) setBaselineDate(res.baselineDateUsed);
+      if (!comparisonDate && res.comparisonDateUsed) setComparisonDate(res.comparisonDateUsed);
+    } else {
+      toast.error(res.error || "Failed to load comparisons");
+    }
+    setLoadingComparisons(false);
+  }, [comparisonGrade, comparisonSubject, comparisonClass, baselineDate, comparisonDate]);
+
+  const loadLeaderboard = useCallback(async () => {
+    setLoadingLeaderboard(true);
+    const res = await getKhanLeaderboard({
+      grade: leaderboardGrade === "all" ? undefined : leaderboardGrade,
+      subject: leaderboardSubject === "all" ? undefined : leaderboardSubject,
+      sortBy: leaderboardSort,
+    });
+
+    if (res.success) {
+      setLeaderboardEntries(res.entries);
+    } else {
+      toast.error(res.error || "Failed to load leaderboard");
+    }
+    setLoadingLeaderboard(false);
+  }, [leaderboardGrade, leaderboardSubject, leaderboardSort]);
+
+  // Dynamic filter state discovered from database and standard curricula
+  const [dynamicGrades, setDynamicGrades] = useState<string[]>([
+    "KG1", "KG2", "KG3", "1", "2", "3", "4", "5", "6", "7", "8"
+  ]);
+  const [dynamicSubjects, setDynamicSubjects] = useState<string[]>([
+    "Books", "Early Learning", "ELA", "English", "Logic", "Math", "Maths", "Reading", "Science", "Social Studies", "Social-Emotional", "Writing"
+  ]);
+  const [dynamicClasses, setDynamicClasses] = useState<string[]>([]);
+
+  const loadFilterOptions = useCallback(async () => {
+    const res = await getKhanDynamicFilterOptions();
+    if (res.success) {
+      if (res.grades.length > 0) setDynamicGrades(res.grades);
+      if (res.subjects.length > 0) setDynamicSubjects(res.subjects);
+      if (res.classes.length > 0) setDynamicClasses(res.classes);
+    }
+  }, []);
 
   useEffect(() => {
     loadImports();
-  }, [loadImports]);
+    loadFilterOptions();
+  }, [loadImports, loadFilterOptions]);
 
   useEffect(() => {
-    if (activeTab === "explorer") {
-      loadRecords();
-    }
-  }, [activeTab, loadRecords]);
+    if (activeTab === "explorer") loadRecords();
+    if (activeTab === "comparison") loadComparisons();
+    if (activeTab === "leaderboard") loadLeaderboard();
+  }, [activeTab, loadRecords, loadComparisons, loadLeaderboard]);
 
-  // Aggregate stats
+  // Aggregate stats & fully dynamic options
   const totalLearningRecords = useMemo(
     () => imports.reduce((acc, imp) => acc + (imp.records_count || 0), 0),
     [imports]
   );
-  const uniqueClasses = useMemo(
-    () => Array.from(new Set(imports.map((i) => i.school_class_name))).filter(Boolean),
-    [imports]
-  );
-  const uniqueSubjects = useMemo(
-    () => Array.from(new Set(imports.map((i) => i.subject))).filter(Boolean),
-    [imports]
-  );
+  const uniqueGrades = useMemo(() => {
+    const fromImports = imports.map((i) => i.grade).filter(Boolean);
+    return Array.from(new Set([...dynamicGrades, ...fromImports])).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    );
+  }, [dynamicGrades, imports]);
+
+  const uniqueClasses = useMemo(() => {
+    const fromImports = imports.map((i) => i.school_class_name).filter(Boolean);
+    return Array.from(new Set([...dynamicClasses, ...fromImports])).sort();
+  }, [dynamicClasses, imports]);
+
+  const uniqueSubjects = useMemo(() => {
+    const fromImports = imports.map((i) => i.subject).filter(Boolean);
+    return Array.from(new Set([...dynamicSubjects, ...fromImports])).sort();
+  }, [dynamicSubjects, imports]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Upload Handlers
   // ───────────────────────────────────────────────────────────────────────────
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selected = e.target.files[0];
-      const type = selected.type;
-      const isZip =
-        type === "application/zip" ||
-        type === "application/x-zip-compressed" ||
-        selected.name.toLowerCase().endsWith(".zip");
-      const isHtml = type === "text/html" || selected.name.toLowerCase().endsWith(".html");
-
-      if (!isZip && !isHtml) {
-        toast.error("Invalid file type. Please select an HTML or ZIP file.");
-        return;
-      }
       setUploadFile(selected);
-      setParseResult(null);
+      setParseState(null);
+      setParsing(true);
+
+      const formData = new FormData();
+      formData.append("file", selected);
+
+      const res = await parseKhanUpload(formData);
+      setParsing(false);
+
+      if (res.success) {
+        setParseState(res);
+        if (res.batchCount && res.batchCount > 1) {
+          toast.success(`Archive unpacked: ${res.batchCount} report files ready for import.`);
+        } else {
+          toast.success("File parsed and validated successfully.");
+        }
+      } else {
+        toast.error(res.error || "Invalid file");
+        setUploadFile(null);
+      }
     }
   };
 
-  const handleParse = async () => {
+  const handleSaveImport = async () => {
     if (!uploadFile) return;
-
-    setParsing(true);
-    const formData = new FormData();
-    formData.append("file", uploadFile);
-
-    const res = await parseKhanUpload(formData);
-
-    if (res.success && res.result) {
-      setParseResult(res.result);
-      toast.success("File validated and parsed successfully!");
-    } else {
-      toast.error(res.error || "Failed to parse file.");
-    }
-    setParsing(false);
-  };
-
-  const handleSave = async () => {
-    if (!uploadFile || saving) return;
-
     setSaving(true);
+
     const formData = new FormData();
     formData.append("file", uploadFile);
 
     const res = await saveKhanImport(formData);
+    setSaving(false);
 
     if (res.success) {
-      toast.success(`Success! Imported ${res.records_inserted || 0} learning records.`);
-      setParseResult(null);
+      toast.success(res.message || `Successfully imported ${res.records_inserted} records!`);
       setUploadFile(null);
-      // Automatically refresh imports and navigate to History tab
-      await loadImports();
+      setParseState(null);
+      await Promise.all([loadImports(), loadFilterOptions()]);
       setActiveTab("history");
     } else {
-      switch (res.status) {
-        case "duplicate":
-          toast.error("This exact Khan report has already been imported.");
-          break;
-        case "validation_error":
-          toast.error(res.message || "Import validation failed.");
-          break;
-        case "unauthorized":
-          toast.error("You must be authenticated to perform this action.");
-          break;
-        case "storage_error":
-          toast.error("The file could not be securely stored. Import was aborted.");
-          break;
-        case "unexpected_error":
-          toast.error("Import status is uncertain due to a network or server issue. Do not retry immediately.");
-          break;
-        default:
-          toast.error("An unknown error occurred.");
+      if (res.status === "duplicate") {
+        toast.warning(res.message || "This exact file has already been imported.");
+      } else {
+        toast.error(res.message || "Failed to save import.");
       }
     }
-    setSaving(false);
   };
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Export & Download Handlers (for Engineer Abiy & Staff)
+  // Export Handlers
   // ───────────────────────────────────────────────────────────────────────────
 
-  const handleExportCsv = async (importId?: string) => {
-    const key = importId || "global-csv";
-    setExportingId(key);
-    toast.info(t("khan.preparingExport"));
-
+  const handleExportCsv = async (scope: { importId?: string; studentName?: string; status?: string }) => {
+    setExportingId(scope.importId || "all");
     const res = await getKhanExportData({
-      importId: importId || (selectedImportId === "all" ? undefined : selectedImportId),
-      studentName: filterStudent.trim() || undefined,
-      status: filterStatus === "all" ? undefined : filterStatus,
+      importId: scope.importId,
+      studentName: scope.studentName,
+      status: scope.status,
+      grade: filterGrade === "all" ? undefined : filterGrade,
+      subject: filterSubject === "all" ? undefined : filterSubject,
     });
-
-    if (res.success && res.rows && res.filename) {
-      downloadCsv(`${res.filename}.csv`, res.rows as unknown as Record<string, string | number | null>[]);
-      toast.success(`Exported ${res.rows.length} learning records as CSV!`);
-    } else {
-      toast.error(res.error || "Failed to export data.");
-    }
     setExportingId(null);
+
+    if (res.success && res.rows) {
+      downloadCsv(res.filename || "khan-data-export.csv", res.rows);
+      toast.success(`Exported ${res.rows.length} records to CSV.`);
+    } else {
+      toast.error(res.error || "Export failed");
+    }
   };
 
-  const handleExportJson = async (importId?: string) => {
-    const key = importId || "global-json";
-    setExportingId(key);
-    toast.info(t("khan.preparingExport"));
-
-    const res = await getKhanExportData({
-      importId: importId || (selectedImportId === "all" ? undefined : selectedImportId),
-      studentName: filterStudent.trim() || undefined,
-      status: filterStatus === "all" ? undefined : filterStatus,
-    });
-
-    if (res.success && res.jsonData && res.filename) {
-      downloadJson(`${res.filename}.json`, res.jsonData);
-      toast.success("Exported structured learning dataset as JSON!");
-    } else {
-      toast.error(res.error || "Failed to export data.");
-    }
+  const handleExportJson = async (scope: { importId?: string; studentName?: string }) => {
+    setExportingId(scope.importId || "all");
+    const res = await getKhanExportData(scope);
     setExportingId(null);
+
+    if (res.success && res.jsonData) {
+      downloadJson(`${res.filename || "khan-data"}-engineer-handoff.json`, res.jsonData);
+      toast.success("Exported structured JSON package for Engineer Abiy.");
+    } else {
+      toast.error(res.error || "Export failed");
+    }
   };
 
-  const handleDownloadHtml = async (importId: string) => {
+  const handleDownloadOriginalHtml = async (importId: string) => {
     setDownloadingHtmlId(importId);
     const res = await getSignedHtmlUrl(importId);
-    if (res.success && res.signedUrl) {
-      const link = document.createElement("a");
-      link.href = res.signedUrl;
-      link.download = res.filename || "khan-report.html";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Download started for raw HTML report.");
-    } else {
-      toast.error(res.error || "Failed to generate download URL.");
-    }
     setDownloadingHtmlId(null);
+
+    if (res.success && res.signedUrl) {
+      const a = document.createElement("a");
+      a.href = res.signedUrl;
+      a.download = res.filename || "khan_report.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("Downloaded original file.");
+    } else {
+      toast.error(res.error || "Failed to generate download link.");
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader
-          title={t("khan.title")}
-          subtitle={t("khan.subtitle")}
-        />
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link href="/dashboard/khan-data/mappings">
-            <Button variant="outline" className="gap-2">
-              <Link2 className="h-4 w-4 text-royal-600" aria-hidden />
-              {lang === "en" ? "Student Mappings" : "የተማሪ ማገናኛ"}
+      <PageHeader
+        title={lang === "en" ? "Khan Academy Kids Analytics" : "የካን አካዳሚ ትምህርት ትንተና"}
+        subtitle={
+          lang === "en"
+            ? "Student-level learning profiles, monthly comparisons, skill mastery, and evidence-based pilot reports."
+            : "የተማሪዎች የትምህርት ውጤት፣ ወርሃዊ እድገት እና የተረጋገጠ የሙከራ ሪፖርት።"
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/dashboard/khan-data/mappings">
+              <Button variant="outline" size="sm" className="gap-2 border-royal-200 hover:bg-royal-50 text-royal-700">
+                <Link2 className="h-4 w-4 text-royal-600" />
+                {lang === "en" ? "Student Mappings" : "የተማሪዎች ግንኙነት"}
+              </Button>
+            </Link>
+            <Button
+              variant={activeTab === "upload" ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("upload")}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {lang === "en" ? "Upload Report" : "ሪፖርት አስገባ"}
             </Button>
-          </Link>
-          <Button
-            onClick={() => setActiveTab("upload")}
-            className="gap-2 shadow-lg shadow-royal-700/20"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            {t("khan.tab.upload")}
-          </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Card className="border-slate-200/70 bg-gradient-to-br from-white to-royal-50/20 shadow-sm">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                {t("khan.stats.totalImports")}
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-royal-100 text-royal-700">
-                <Database className="h-4 w-4" aria-hidden />
-              </span>
+      {/* KPI Top Cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {lang === "en" ? "Total Imports" : "ጠቅላላ ፋይሎች"}
+              </p>
+              <p className="text-2xl font-extrabold text-slate-900 mt-1">{imports.length}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{uniqueClasses.length} classes recorded</p>
             </div>
-            <p className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-              {loadingImports ? "…" : imports.length}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-400">
-              {lang === "en" ? "Stored HTML reports" : "የተቀመጡ ሪፖርቶች"}
-            </p>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-royal-50 text-royal-700">
+              <Database className="h-5 w-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200/70 bg-gradient-to-br from-white to-emerald-50/20 shadow-sm">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                {t("khan.stats.totalRecords")}
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                <Layers className="h-4 w-4" aria-hidden />
-              </span>
+        <Card className="border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {lang === "en" ? "Activity Records" : "የትምህርት ተግባራት"}
+              </p>
+              <p className="text-2xl font-extrabold text-royal-800 mt-1 font-mono">
+                {totalLearningRecords.toLocaleString()}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{uniqueSubjects.join(", ") || "General"}</p>
             </div>
-            <p className="mt-2 text-2xl font-extrabold text-emerald-950 sm:text-3xl">
-              {loadingImports ? "…" : totalLearningRecords.toLocaleString()}
-            </p>
-            <p className="mt-0.5 text-xs text-emerald-600 font-medium">
-              {lang === "en" ? "Granular skill datapoints" : "ዝርዝር የመማር ነጥቦች"}
-            </p>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+              <Layers className="h-5 w-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200/70 bg-gradient-to-br from-white to-violet-50/20 shadow-sm">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                {t("khan.stats.classes")}
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-                <GraduationCap className="h-4 w-4" aria-hidden />
-              </span>
+        <Card className="border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {lang === "en" ? "Active Grades" : "ክፍሎች"}
+              </p>
+              <p className="text-2xl font-extrabold text-slate-900 mt-1">
+                {uniqueGrades.length > 0 ? uniqueGrades.join(", ") : "KG1 – KG3"}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">Flexible grade support</p>
             </div>
-            <p className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-              {loadingImports ? "…" : uniqueClasses.length}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-400 truncate" title={uniqueClasses.join(", ")}>
-              {uniqueClasses.join(", ") || (lang === "en" ? "None" : "ምንም")}
-            </p>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+              <GraduationCap className="h-5 w-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200/70 bg-gradient-to-br from-white to-amber-50/20 shadow-sm">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                {lang === "en" ? "Subjects" : "ትምህርቶች"}
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <BookOpen className="h-4 w-4" aria-hidden />
-              </span>
+        <Card className="border-slate-200/80 bg-gradient-to-br from-white to-slate-50/50 shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {lang === "en" ? "Pilot Status" : "የሙከራ ሁኔታ"}
+              </p>
+              <p className="text-lg font-extrabold text-emerald-700 mt-1 flex items-center gap-1.5">
+                <ShieldCheck className="h-5 w-5" />
+                {lang === "en" ? "Evidence-Based" : "የተረጋገጠ"}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">1-Month Report Ready</p>
             </div>
-            <p className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-              {loadingImports ? "…" : uniqueSubjects.length}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-400 truncate" title={uniqueSubjects.join(", ")}>
-              {uniqueSubjects.join(", ") || "ELA, Books, Math"}
-            </p>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-700">
+              <Award className="h-5 w-5" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2">
-        <div className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm">
-          <button
-            onClick={() => setActiveTab("history")}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition",
-              activeTab === "history"
-                ? "bg-royal-700 text-white shadow-md shadow-royal-700/20"
-                : "text-slate-600 hover:bg-slate-50 hover:text-royal-700"
-            )}
-          >
-            <Database className="h-4 w-4" aria-hidden />
-            {t("khan.tab.history")}
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                activeTab === "history" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-              )}
-            >
-              {imports.length}
-            </span>
-          </button>
+      {/* Primary Navigation Tabs */}
+      <div className="flex overflow-x-auto border-b border-slate-200 bg-white px-2 rounded-xl shadow-sm">
+        <button
+          type="button"
+          onClick={() => setActiveTab("history")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "history"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <Database className="h-4 w-4" />
+          {lang === "en" ? "Import History" : "የገቡ ሪፖርቶች"} ({imports.length})
+        </button>
 
-          <button
-            onClick={() => setActiveTab("explorer")}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition",
-              activeTab === "explorer"
-                ? "bg-royal-700 text-white shadow-md shadow-royal-700/20"
-                : "text-slate-600 hover:bg-slate-50 hover:text-royal-700"
-            )}
-          >
-            <Search className="h-4 w-4" aria-hidden />
-            {t("khan.tab.explorer")}
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                activeTab === "explorer" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-              )}
-            >
-              {totalCount > 0 ? totalCount.toLocaleString() : totalLearningRecords.toLocaleString()}
-            </span>
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("students")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "students"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <Users className="h-4 w-4" />
+          {lang === "en" ? "Student Learning Profiles" : "የተማሪዎች ውጤት መገለጫ"}
+        </button>
 
-          <button
-            onClick={() => setActiveTab("upload")}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition",
-              activeTab === "upload"
-                ? "bg-royal-700 text-white shadow-md shadow-royal-700/20"
-                : "text-slate-600 hover:bg-slate-50 hover:text-royal-700"
-            )}
-          >
-            <Upload className="h-4 w-4" aria-hidden />
-            {t("khan.tab.upload")}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab("comparison")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "comparison"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <TrendingUp className="h-4 w-4" />
+          {lang === "en" ? "Monthly Progress & Comparison" : "ወርሃዊ እድገት ማነፃፀሪያ"}
+        </button>
 
-        {activeTab === "history" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadImports}
-            disabled={loadingImports}
-            className="gap-1.5 text-xs"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", loadingImports && "animate-spin")} />
-            {lang === "en" ? "Refresh History" : "አድስ"}
-          </Button>
-        )}
+        <button
+          type="button"
+          onClick={() => setActiveTab("leaderboard")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "leaderboard"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <Trophy className="h-4 w-4" />
+          {lang === "en" ? "Leaderboards & Rankings" : "የደረጃ ሰንጠረዥ"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("explorer")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "explorer"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          {lang === "en" ? "Activity Explorer" : "ዝርዝር ተግባራት"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("upload")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition whitespace-nowrap",
+            activeTab === "upload"
+              ? "border-royal-600 text-royal-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          )}
+        >
+          <Upload className="h-4 w-4" />
+          {lang === "en" ? "Upload & Ingest" : "አዲስ ሪፖርት አስገባ"}
+        </button>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 1: IMPORTS HISTORY                                                  */}
-      {/* ─────────────────────────────────────────────────────────────────────── */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 1: IMPORT HISTORY & RETENTION */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
       {activeTab === "history" && (
-        <Card className="border-slate-200/80 shadow-sm">
-          <CardContent className="p-0">
-            <div className="border-b border-slate-100 p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-slate-50/50 rounded-t-xl">
-              <div>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  {lang === "en" ? "Completed Khan Academy Imports" : "የተጠናቀቁ የካን አካዳሚ ሪፖርቶች"}
-                </CardTitle>
-                <CardDescription className="text-xs mt-0.5">
-                  {lang === "en"
-                    ? "Verified records stored in PostgreSQL with raw HTML preserved in secure storage."
-                    : "በዳታቤዝ ውስጥ የተቀመጡ ሪፖርቶች ዝርዝር።"}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExportCsv()}
-                  disabled={imports.length === 0 || exportingId === "global-csv"}
-                  className="gap-1.5 text-xs"
-                >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
-                  {lang === "en" ? "Export All CSV" : "ሁሉንም በCSV አውርድ"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExportJson()}
-                  disabled={imports.length === 0 || exportingId === "global-json"}
-                  className="gap-1.5 text-xs"
-                >
-                  <FileCode className="h-3.5 w-3.5 text-royal-600" />
-                  {lang === "en" ? "Export All JSON" : "ሁሉንም በJSON አውርድ"}
-                </Button>
-              </div>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {lang === "en" ? "Ingested Khan Academy Reports" : "የገቡ የካን አካዳሚ ሪፖርቶች"}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {lang === "en"
+                  ? "Every import is archived with original file retention, hash verification, and normalized activity extraction."
+                  : "እያንዳንዱ ሪፖርት በዋናው ፋይል ተቀምጦ ትክክለኛነቱ የተረጋገጠ ነው።"}
+              </p>
             </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportCsv({})}
+                className="gap-1.5 text-xs text-slate-700"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {lang === "en" ? "Export All CSV" : "ሁሉንም CSV አውርድ"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportJson({})}
+                className="gap-1.5 text-xs text-royal-700 border-royal-200 bg-royal-50/50"
+              >
+                <FileCode className="h-3.5 w-3.5" />
+                {lang === "en" ? "Engineer Abiy Handoff (JSON)" : "የኢንጂነር አብይ ፓኬጅ (JSON)"}
+              </Button>
+            </div>
+          </div>
 
-            {loadingImports ? (
-              <div className="py-20 text-center text-sm text-slate-400">
-                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-royal-600 mb-2" />
-                {t("common.loading")}
-              </div>
-            ) : imports.length === 0 ? (
-              <div className="py-20 text-center px-4">
-                <Database className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-base font-semibold text-slate-700">{t("khan.noImports")}</p>
-                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                  {lang === "en"
-                    ? "Upload your first HTML or ZIP report export to see learning analytics here."
-                    : "የመጀመሪያውን ሪፖርት በማስገባት ይጀምሩ።"}
-                </p>
-                <Button
-                  onClick={() => setActiveTab("upload")}
-                  className="mt-4 gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  {t("khan.tab.upload")}
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-200/80 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50/90 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Report Date" : "ቀን"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Class & Grade" : "ክፍል"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Subject" : "የትምህርት አይነት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "File Details" : "ፋይል"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Records" : "የተግባራት ብዛት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Uploaded By" : "ያስገባው"}</th>
+                    <th className="px-5 py-3.5 text-right">{lang === "en" ? "Actions" : "እርምጃዎች"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loadingImports ? (
                     <tr>
-                      <th className="px-5 py-3.5">{t("khan.reportDate")}</th>
-                      <th className="px-5 py-3.5">{t("khan.classGrade")}</th>
-                      <th className="px-5 py-3.5">{t("khan.subject")}</th>
-                      <th className="px-5 py-3.5 text-center">{t("khan.recordCount")}</th>
-                      <th className="px-5 py-3.5">{t("khan.originalFile")}</th>
-                      <th className="px-5 py-3.5">{t("khan.importedAt")}</th>
-                      <th className="px-5 py-3.5 text-right">{t("common.actions")}</th>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {t("common.loading")}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {imports.map((imp) => (
-                      <tr key={imp.id} className="hover:bg-royal-50/30 transition">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-royal-100 text-royal-700">
-                              <Calendar className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="font-bold text-slate-900 font-mono">
-                              {imp.report_date}
-                            </span>
-                          </div>
+                  ) : imports.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        <p className="font-semibold">{lang === "en" ? "No imports yet" : "ምንም የገባ ሪፖርት የለም"}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {lang === "en" ? "Upload an HTML or ZIP export from Khan Academy Kids." : "የካን አካዳሚ ፋይል ያስገቡ።"}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    imports.map((imp) => (
+                      <tr key={imp.id} className="hover:bg-slate-50/50 transition">
+                        <td className="px-5 py-3.5">
+                          <span className="font-mono font-bold text-slate-900">{imp.report_date}</span>
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-3.5">
                           <div>
-                            <p className="font-semibold text-slate-800">{imp.school_class_name}</p>
-                            <p className="text-xs text-slate-400">{imp.grade}</p>
+                            <p className="font-bold text-slate-900">{imp.school_class_name}</p>
+                            <span className="inline-flex rounded-md bg-royal-50 px-2 py-0.5 text-[11px] font-semibold text-royal-700">
+                              {imp.grade}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                            {imp.subject}
-                          </span>
+                        <td className="px-5 py-3.5">
+                          <span className="font-semibold text-slate-700">{imp.subject}</span>
                         </td>
-                        <td className="px-5 py-4 text-center">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 font-mono">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {imp.records_count.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span
-                            className="text-xs text-slate-500 font-mono truncate max-w-[180px] block"
-                            title={imp.original_filename}
-                          >
-                            {imp.original_filename}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="text-xs">
-                            <p className="font-medium text-slate-700">
-                              {formatDate(imp.created_at.slice(0, 10), lang)}
-                            </p>
-                            <p className="text-slate-400">by {imp.uploader_name}</p>
+                        <td className="px-5 py-3.5">
+                          <div className="max-w-[200px] truncate text-xs text-slate-600" title={imp.original_filename}>
+                            <p className="font-mono truncate">{imp.original_filename}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">hash: {imp.file_hash.slice(0, 8)}…</p>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-right">
+                        <td className="px-5 py-3.5">
+                          <Badge tone="green" className="font-mono font-bold">
+                            {imp.records_count} records
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-slate-600">
+                          {imp.uploader_name}
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <Link href={`/dashboard/khan-data/${imp.id}`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-2.5 text-xs gap-1 hover:border-royal-500 hover:text-royal-700"
-                                title={t("khan.viewDetails")}
-                              >
-                                <Eye className="h-3.5 w-3.5 text-royal-600" />
-                                {lang === "en" ? "Explore" : "ዝርዝር"}
-                              </Button>
-                            </Link>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={exportingId === imp.id}
-                              onClick={() => handleExportCsv(imp.id)}
-                              className="h-8 px-2 text-xs text-emerald-700 hover:border-emerald-500 hover:bg-emerald-50"
-                              title="Download CSV"
-                            >
-                              <FileSpreadsheet className="h-3.5 w-3.5" />
-                              CSV
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={exportingId === imp.id}
-                              onClick={() => handleExportJson(imp.id)}
-                              className="h-8 px-2 text-xs text-royal-700 hover:border-royal-500 hover:bg-royal-50"
-                              title="Download JSON"
-                            >
-                              <FileCode className="h-3.5 w-3.5" />
-                              JSON
-                            </Button>
-
                             <Button
                               variant="ghost"
                               size="sm"
-                              disabled={downloadingHtmlId === imp.id}
-                              onClick={() => handleDownloadHtml(imp.id)}
-                              className="h-8 px-2 text-xs text-slate-500 hover:text-slate-900"
-                              title={t("khan.downloadHtml")}
+                              title="Download Original File"
+                              loading={downloadingHtmlId === imp.id}
+                              onClick={() => handleDownloadOriginalHtml(imp.id)}
+                              className="h-8 px-2 text-xs text-slate-600 hover:text-royal-700"
                             >
                               <Download className="h-3.5 w-3.5" />
-                              HTML
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedImportId(imp.id);
+                                setActiveTab("explorer");
+                              }}
+                              className="h-8 px-2 text-xs"
+                            >
+                              {lang === "en" ? "View Records" : "ተግባራት"}
                             </Button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 2: RECORDS EXPLORER (Paginated, Filterable, Scalable)               */}
-      {/* ─────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "explorer" && (
-        <div className="space-y-4">
-          <Card className="border-slate-200/80 shadow-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                {/* Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1">
-                      {lang === "en" ? "Filter by Import Report" : "በሪፖርት አጣራ"}
-                    </label>
-                    <select
-                      value={selectedImportId}
-                      onChange={(e) => {
-                        setSelectedImportId(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
-                    >
-                      <option value="all">
-                        {lang === "en" ? "All Imports (Global View)" : "ሁሉም ሪፖርቶች"}
-                      </option>
-                      {imports.map((imp) => (
-                        <option key={imp.id} value={imp.id}>
-                          {imp.report_date} · {imp.school_class_name} ({imp.subject})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1">
-                      {lang === "en" ? "Student Name" : "የተማሪ ስም"}
-                    </label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder={t("khan.filterStudent")}
-                        value={filterStudent}
-                        onChange={(e) => {
-                          setFilterStudent(e.target.value);
-                          setPage(1);
-                        }}
-                        className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-8 pr-3 text-xs text-slate-700 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1">
-                      {t("khan.filterStatus")}
-                    </label>
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => {
-                        setFilterStatus(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
-                    >
-                      <option value="all">{t("khan.filterAll")}</option>
-                      <option value="attempted">{t("khan.status.attempted")}</option>
-                      <option value="viewed">{t("khan.status.viewed")}</option>
-                      <option value="unattempted">{t("khan.status.unattempted")}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1">
-                      {lang === "en" ? "Activity / Skill Search" : "የክህሎት ፍለጋ"}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder={lang === "en" ? "Search activity keyword…" : "የተግባር ቃል ፈልግ…"}
-                      value={searchKeyword}
-                      onChange={(e) => {
-                        setSearchKeyword(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
-                    />
-                  </div>
-                </div>
-
-                {/* Bulk Exports for filtered dataset */}
-                <div className="flex items-center gap-2 pt-2 lg:pt-5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExportCsv()}
-                    disabled={totalCount === 0 || exportingId === "global-csv"}
-                    className="gap-1.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500"
-                  >
-                    <FileSpreadsheet className="h-3.5 w-3.5" />
-                    {t("khan.exportCsv")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExportJson()}
-                    disabled={totalCount === 0 || exportingId === "global-json"}
-                    className="gap-1.5 text-xs text-royal-700 hover:bg-royal-50 hover:border-royal-500"
-                  >
-                    <FileCode className="h-3.5 w-3.5" />
-                    {t("khan.exportJson")}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Paginated Records Table */}
-          <Card className="border-slate-200/80 shadow-sm">
-            <CardContent className="p-0">
-              <div className="border-b border-slate-100 px-5 py-3.5 flex items-center justify-between bg-slate-50/50">
-                <span className="text-xs font-semibold text-slate-600">
-                  {totalCount > 0 ? (
-                    t("khan.showingRecords")
-                      .replace("{from}", String((page - 1) * pageSize + 1))
-                      .replace("{to}", String(Math.min(page * pageSize, totalCount)))
-                      .replace("{total}", totalCount.toLocaleString())
-                  ) : (
-                    t("khan.noRecords")
+                    ))
                   )}
-                </span>
-                {totalPages > 1 && (
-                  <span className="text-xs font-mono text-slate-400">
-                    {t("khan.page")} {page} {t("khan.of")} {totalPages}
-                  </span>
-                )}
-              </div>
-
-              {loadingRecords ? (
-                <div className="py-24 text-center text-sm text-slate-400">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto text-royal-600 mb-2" />
-                  {t("common.loading")}
-                </div>
-              ) : records.length === 0 ? (
-                <div className="py-20 text-center px-4">
-                  <Filter className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-slate-700">{t("khan.noRecords")}</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {lang === "en" ? "Try clearing search filters or selecting another import." : "እባክዎ ማጣሪያውን ይቀይሩ።"}
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto max-h-[620px]">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-slate-50 sticky top-0 shadow-sm border-b border-slate-200/80 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      <tr>
-                        <th className="px-5 py-3">Student</th>
-                        <th className="px-5 py-3">Class / Date</th>
-                        <th className="px-5 py-3">Category / Level</th>
-                        <th className="px-5 py-3">Activity / Skill</th>
-                        <th className="px-5 py-3 text-center">Score %</th>
-                        <th className="px-5 py-3 text-center">Progress</th>
-                        <th className="px-5 py-3 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {records.map((r) => (
-                        <tr key={r.id} className="hover:bg-royal-50/25 transition">
-                          <td className="px-5 py-3">
-                            <div>
-                              <p className="font-semibold text-slate-900">{r.khan_student_name}</p>
-                              {r.official_student_name ? (
-                                <p className="text-[11px] text-emerald-700 flex items-center gap-1">
-                                  <Link2 className="h-3 w-3" />
-                                  {r.official_student_name} ({r.official_student_code})
-                                </p>
-                              ) : (
-                                <span className="text-[10px] text-amber-600 font-medium">Unmapped</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="text-xs">
-                              <p className="font-medium text-slate-700">{r.school_class_name || "—"}</p>
-                              <p className="text-slate-400 font-mono">{r.report_date} · {r.subject}</p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-xs text-slate-600 font-medium">
-                            {r.category_level}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-slate-800 max-w-[260px] truncate" title={r.activity_skill}>
-                            {r.activity_skill}
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            {r.score_percentage !== null ? (
-                              <span
-                                className={cn(
-                                  "font-bold font-mono text-xs px-2 py-0.5 rounded-md",
-                                  r.score_percentage >= 80
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : r.score_percentage >= 50
-                                    ? "bg-royal-50 text-royal-700"
-                                    : "bg-slate-100 text-slate-700"
-                                )}
-                              >
-                                {r.score_percentage}%
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 font-mono text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="px-5 py-3 text-center font-mono text-xs text-slate-600">
-                            {r.progress_current !== null && r.progress_total !== null
-                              ? `${r.progress_current}/${r.progress_total}`
-                              : "—"}
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            {r.status === "attempted" && (
-                              <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                                {t("khan.status.attempted")}
-                              </span>
-                            )}
-                            {r.status === "viewed" && (
-                              <span className="inline-flex rounded-full bg-royal-100 px-2.5 py-0.5 text-xs font-semibold text-royal-800">
-                                {t("khan.status.viewed")}
-                              </span>
-                            )}
-                            {r.status === "unattempted" && (
-                              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                                {t("khan.status.unattempted")}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="border-t border-slate-100 px-5 py-3.5 flex items-center justify-between bg-slate-50/50">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1 || loadingRecords}
-                    className="gap-1 text-xs"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    {t("khan.prev")}
-                  </Button>
-
-                  <div className="text-xs font-medium text-slate-600">
-                    {t("khan.page")} {page} {t("khan.of")} {totalPages}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages || loadingRecords}
-                    className="gap-1 text-xs"
-                  >
-                    {t("khan.next")}
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────── */}
-      {/* TAB 3: UPLOAD REPORT & PREVIEW                                          */}
-      {/* ─────────────────────────────────────────────────────────────────────── */}
-      {activeTab === "upload" && (
-        <div className="space-y-6">
-          {!parseResult ? (
-            <Card className="border-slate-200/80 shadow-sm">
-              <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="mb-4 rounded-2xl bg-royal-50 p-4 shadow-inner">
-                  <Upload className="h-8 w-8 text-royal-600" />
-                </div>
-                <CardTitle className="mb-2 text-xl font-bold text-slate-900">
-                  Upload Khan Academy Export
-                </CardTitle>
-                <CardDescription className="mb-6 max-w-md text-xs text-slate-500">
-                  Select an HTML or single-file ZIP export from Khan Academy Kids. The file will be securely validated and previewed before saving into the database.
-                </CardDescription>
-
-                <div className="flex flex-col items-center gap-4 w-full max-w-md">
-                  <label className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/80 px-6 py-5 transition hover:bg-slate-100/80 hover:border-royal-400">
-                    <FileCode className="h-6 w-6 text-royal-600 shrink-0" />
-                    <span className="font-semibold text-slate-700 text-sm truncate">
-                      {uploadFile ? uploadFile.name : "Choose HTML or ZIP Report File"}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".html,text/html,.zip,application/zip,application/x-zip-compressed"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 2: STUDENT LEARNING PROFILES */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {activeTab === "students" && (
+        <div className="space-y-5">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                <div className="w-full sm:w-1/2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                    {lang === "en" ? "Select Student" : "ተማሪ ይምረጡ"}
                   </label>
-
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder={lang === "en" ? "Search student name or ID…" : "ስም ወይም መለያ ፈልግ…"}
+                      value={selectedStudentSearch}
+                      onChange={(e) => setSelectedStudentSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && selectedStudentSearch.trim()) {
+                          loadStudentProfile(selectedStudentSearch.trim());
+                        }
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
                   <Button
-                    onClick={handleParse}
-                    disabled={!uploadFile || parsing}
-                    className="w-full gap-2 shadow-lg shadow-royal-700/20"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => selectedStudentSearch.trim() && loadStudentProfile(selectedStudentSearch.trim())}
+                    disabled={!selectedStudentSearch.trim()}
+                    className="gap-2"
                   >
-                    {parsing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Validating & Parsing…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Parse & Preview File
-                      </>
-                    )}
+                    <Search className="h-4 w-4" />
+                    {lang === "en" ? "Load Profile" : "መገለጫ ክፈት"}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
+              </div>
+            </CardContent>
+          </Card>
+
+          {loadingProfile ? (
+            <div className="py-20 text-center text-sm text-slate-400">{t("common.loading")}</div>
+          ) : studentProfile ? (
             <div className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                <Card className="md:col-span-2 border-slate-200/80 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                      <h3 className="font-bold text-slate-900">Verified Report Metadata</h3>
+              {/* Profile Header Card */}
+              <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-royal-900 to-indigo-950 text-white">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-black">{studentProfile.studentName}</h2>
+                        {studentProfile.officialStudent ? (
+                          <Badge tone="green" className="bg-emerald-500 text-white">
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Official Pilot Student
+                          </Badge>
+                        ) : (
+                          <Badge tone="amber" className="bg-amber-500 text-slate-900">
+                            Unmapped Khan Name
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-royal-200 mt-1 font-mono">
+                        {studentProfile.officialStudent
+                          ? `ID: ${studentProfile.officialStudent.student_code} · Grade: ${studentProfile.officialStudent.grade} (${studentProfile.officialStudent.section})`
+                          : `Enrolled in: ${studentProfile.classes.join(", ") || "Khan Class"}`}
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-slate-500 block text-xs">File:</span>
-                        <span className="font-semibold text-slate-900 text-xs font-mono truncate block">
-                          {uploadFile?.name}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Report Date:</span>
-                        <span className="font-semibold text-slate-900">{parseResult.metadata.reportDate}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Subject:</span>
-                        <span className="font-semibold text-slate-900">{parseResult.metadata.subject || "General"}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Grade:</span>
-                        <span className="font-semibold text-slate-900">{parseResult.metadata.grade}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Class:</span>
-                        <span className="font-semibold text-slate-900">{parseResult.metadata.className}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-xs">Students Detected:</span>
-                        <span className="font-semibold text-emerald-700">{parseResult.students.length} students</span>
-                      </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportCsv({ studentName: studentProfile.studentName })}
+                      className="gap-1.5 text-xs bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {lang === "en" ? "Export Student CSV" : "የተማሪውን CSV አውርድ"}
+                    </Button>
+                  </div>
+
+                  {/* Top Stats Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 border-t border-white/10 pt-4">
+                    <div>
+                      <p className="text-xs text-royal-200">{lang === "en" ? "Activities Completed" : "የተጠናቀቁ ተግባራት"}</p>
+                      <p className="text-2xl font-black mt-0.5">{studentProfile.totalActivitiesAttempted}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-royal-200">{lang === "en" ? "Viewed Lessons" : "የታዩ ትምህርቶች"}</p>
+                      <p className="text-2xl font-black mt-0.5">{studentProfile.totalActivitiesViewed}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-royal-200">{lang === "en" ? "Average Score" : "አማካይ ውጤት"}</p>
+                      <p className="text-2xl font-black mt-0.5 font-mono">
+                        {studentProfile.averageScorePercentage !== null ? `${studentProfile.averageScorePercentage}%` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-royal-200">{lang === "en" ? "Mastery Scores (≥80%)" : "ከፍተኛ ውጤት (≥80%)"}</p>
+                      <p className="text-2xl font-black mt-0.5 text-emerald-300">{studentProfile.highScoreCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Subject Breakdown & Historical Timeline */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Subject Mastery */}
+                <Card className="border-slate-200 shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 mb-3 flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-royal-600" />
+                      {lang === "en" ? "Subject Performance Breakdown" : "የትምህርት አይነቶች ውጤት"}
+                    </h3>
+                    <div className="space-y-3">
+                      {studentProfile.subjectBreakdown.map((sb) => (
+                        <div key={sb.subject} className="rounded-xl border border-slate-100 p-3 bg-slate-50/50">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-slate-900">{sb.subject}</span>
+                            <span className="font-mono font-bold text-royal-800">
+                              {sb.avgScore !== null ? `${sb.avgScore}% Avg` : "Viewed only"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-slate-500 mt-1.5">
+                            <span>{sb.attemptedCount} exercises completed</span>
+                            <span>•</span>
+                            <span>{sb.viewedCount} lessons viewed</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200/80 shadow-sm">
-                  <CardContent className="p-6 flex flex-col justify-center h-full text-center">
-                    <div className="mb-2">
-                      <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
-                    </div>
-                    <div className="text-3xl font-extrabold text-slate-900">
-                      {parseResult.totalParsedRecords.toLocaleString()}
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
-                      Learning Records
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      across {parseResult.totalParsedRows} activity skills
+                {/* Report Dates / Timeline */}
+                <Card className="border-slate-200 shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-royal-600" />
+                      {lang === "en" ? "Report Timeline & Snapshots" : "የሪፖርት ጊዜያት"}
+                    </h3>
+                    <div className="space-y-2.5">
+                      {studentProfile.recentImports.map((ri) => (
+                        <div key={ri.importId} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 transition">
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{ri.reportDate}</p>
+                            <p className="text-[11px] text-slate-500">{ri.subject} · {ri.className}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                              {ri.attempted} completed
+                            </span>
+                            {ri.avgScore !== null && (
+                              <p className="text-[11px] font-mono text-slate-500 mt-0.5">{ri.avgScore}% score</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {parseResult.warnings.length > 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <div className="flex items-center gap-2 text-amber-800 font-semibold mb-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    Parser Warnings ({parseResult.warnings.length})
-                  </div>
-                  <ul className="text-xs text-amber-700 list-disc pl-5 space-y-1">
-                    {parseResult.warnings.map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Ephemeral Preview Table */}
-              <Card className="border-slate-200/80 shadow-sm">
-                <CardContent className="p-0">
-                  <div className="border-b border-slate-100 p-4 flex items-center justify-between bg-slate-50/50 rounded-t-xl">
-                    <h3 className="font-semibold text-slate-800 text-sm">
-                      Parsed Preview (First 50 rows shown)
-                    </h3>
-                    <span className="text-xs text-slate-400 font-mono">
-                      Total {parseResult.records.length} records ready to commit
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto max-h-[480px]">
+              {/* Detailed Skill Mastery Tree */}
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-5">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 mb-3 flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-royal-600" />
+                    {lang === "en" ? "Activity & Skill Log" : "ዝርዝር ተግባራት እና ውጤቶች"} ({studentProfile.detailedSkills.length})
+                  </h3>
+                  <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm whitespace-nowrap">
-                      <thead className="bg-slate-50 sticky top-0 shadow-sm text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                         <tr>
-                          <th className="px-4 py-3">Student</th>
-                          <th className="px-4 py-3">Level</th>
-                          <th className="px-4 py-3">Activity / Skill</th>
-                          <th className="px-4 py-3 text-center">Progress</th>
-                          <th className="px-4 py-3 text-center">Score</th>
-                          <th className="px-4 py-3 text-right">Status</th>
+                          <th className="px-4 py-2.5">Level</th>
+                          <th className="px-4 py-2.5">Activity / Skill</th>
+                          <th className="px-4 py-2.5">Subject</th>
+                          <th className="px-4 py-2.5">Status</th>
+                          <th className="px-4 py-2.5">Score / Progress</th>
+                          <th className="px-4 py-2.5">Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {parseResult.records.slice(0, 50).map((r, i) => (
-                          <tr key={i} className="hover:bg-slate-50/50 transition">
-                            <td className="px-4 py-2.5 font-semibold text-slate-800">{r.student}</td>
-                            <td className="px-4 py-2.5 text-xs text-slate-500">{r.level}</td>
-                            <td className="px-4 py-2.5 text-xs text-slate-700 truncate max-w-[240px]" title={r.activitySkill}>
-                              {r.activitySkill}
+                        {studentProfile.detailedSkills.slice(0, 50).map((skill, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition">
+                            <td className="px-4 py-2.5 text-xs font-mono text-slate-400">L{skill.categoryLevel}</td>
+                            <td className="px-4 py-2.5 font-medium text-slate-900 max-w-[300px] truncate" title={skill.activitySkill}>
+                              {skill.activitySkill}
                             </td>
-                            <td className="px-4 py-2.5 text-center text-xs font-mono text-slate-600">
-                              {r.progressCurrent !== null ? `${r.progressCurrent}/${r.progressTotal}` : "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-center text-xs font-mono font-semibold">
-                              {r.scorePercentage !== null ? `${r.scorePercentage}%` : "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-right">
-                              {r.status === "attempted" && (
-                                <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-                                  Attempted
+                            <td className="px-4 py-2.5 text-xs text-slate-600">{skill.subject}</td>
+                            <td className="px-4 py-2.5">
+                              {skill.status === "attempted" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                                  <CheckCircle2 className="h-3 w-3" /> Completed
                                 </span>
-                              )}
-                              {r.status === "viewed" && (
-                                <span className="inline-flex rounded-full bg-royal-100 px-2 py-0.5 text-xs font-semibold text-royal-800">
-                                  Viewed
+                              ) : skill.status === "viewed" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-royal-100 px-2 py-0.5 text-[11px] font-bold text-royal-800">
+                                  <Eye className="h-3 w-3" /> Viewed
                                 </span>
-                              )}
-                              {r.status === "unattempted" && (
-                                <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
-                                  Unattempted
-                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">Unattempted</span>
                               )}
                             </td>
+                            <td className="px-4 py-2.5 font-mono text-xs">
+                              {skill.scorePercentage !== null ? (
+                                <span className={cn(
+                                  "font-bold",
+                                  skill.scorePercentage >= 80 ? "text-emerald-700" : skill.scorePercentage >= 60 ? "text-amber-600" : "text-red-600"
+                                )}>
+                                  {skill.scorePercentage}%
+                                </span>
+                              ) : skill.progressRatio ? (
+                                <span className="text-slate-600 font-semibold">{skill.progressRatio}</span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-slate-400 font-mono">{skill.reportDate}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1101,39 +917,683 @@ export default function KhanDataPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setParseResult(null);
-                    setUploadFile(null);
-                  }}
-                  disabled={saving}
-                >
-                  {t("common.cancel")}
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={saving || !uploadFile}
-                  className="gap-2 shadow-lg shadow-royal-700/20"
-                >
-                  {saving ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Saving to Database…
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      Confirm & Save to Database
-                    </>
-                  )}
-                </Button>
-              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+              <Users className="h-10 w-10 text-slate-300" />
+              <p className="text-sm font-semibold">
+                {lang === "en" ? "Enter a student name above to view their comprehensive learning profile." : "የተማሪ ስም ጽፈው ይፈልጉ።"}
+              </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 3: MONTHLY PROGRESS & BASELINE COMPARISON */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {activeTab === "comparison" && (
+        <div className="space-y-4">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Grade" : "ክፍል"}
+                  </label>
+                  <select
+                    value={comparisonGrade}
+                    onChange={(e) => setComparisonGrade(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Grades</option>
+                    {uniqueGrades.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Subject" : "የትምህርት አይነት"}
+                  </label>
+                  <select
+                    value={comparisonSubject}
+                    onChange={(e) => setComparisonSubject(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Subjects</option>
+                    {uniqueSubjects.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Class / Section" : "ክፍል / ቡድን"}
+                  </label>
+                  <select
+                    value={comparisonClass}
+                    onChange={(e) => setComparisonClass(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Classes</option>
+                    {uniqueClasses.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Baseline Date" : "የመጀመሪያ ቀን"}
+                  </label>
+                  <select
+                    value={baselineDate}
+                    onChange={(e) => setBaselineDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    {availableDates.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Comparison Date" : "የማነፃፀሪያ ቀን"}
+                  </label>
+                  <select
+                    value={comparisonDate}
+                    onChange={(e) => setComparisonDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    {availableDates.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={loadComparisons}
+                    className="w-full gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    {lang === "en" ? "Compare" : "አነፃፅር"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Monthly Comparison Table */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[850px] text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50/90 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Student" : "ተማሪ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Baseline Activities" : "የመጀመሪያ ተግባራት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Current Activities" : "የአሁን ተግባራት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Activity Growth" : "የትግበራ እድገት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Score Change" : "የውጤት ለውጥ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Newly Mastered Skills" : "አዲስ የተካኑ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Requires Practice (<70%)" : "ልምምድ የሚሹ"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loadingComparisons ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {t("common.loading")}
+                      </td>
+                    </tr>
+                  ) : comparisons.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {lang === "en" ? "No comparison data found for the selected dates." : "ምንም መረጃ አልተገኘም።"}
+                      </td>
+                    </tr>
+                  ) : (
+                    comparisons.map((c) => (
+                      <tr key={c.khanStudentName} className="hover:bg-slate-50/50 transition">
+                        <td className="px-5 py-3.5">
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              {c.officialStudentName || c.khanStudentName}
+                            </p>
+                            <span className="text-xs font-mono text-slate-400">
+                              {c.studentCode ? `ID: ${c.studentCode}` : "Khan Name: " + c.khanStudentName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-slate-600">
+                          {c.hasBaseline ? c.baselineAttempted : <span className="text-slate-400 italic">No baseline</span>}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono font-bold text-slate-900">
+                          {c.comparisonAttempted}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {c.hasBaseline ? (
+                            <span className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold font-mono",
+                              c.attemptedGrowth >= 0 ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                            )}>
+                              {c.attemptedGrowth >= 0 ? `+${c.attemptedGrowth}` : c.attemptedGrowth}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono">
+                          {c.scoreGrowth !== null ? (
+                            <span className={cn(
+                              "font-bold",
+                              c.scoreGrowth >= 0 ? "text-emerald-600" : "text-amber-600"
+                            )}>
+                              {c.scoreGrowth >= 0 ? `+${c.scoreGrowth}%` : `${c.scoreGrowth}%`}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex rounded-md bg-royal-50 px-2 py-0.5 text-xs font-bold text-royal-700">
+                            {c.newlyCompletedSkillsCount} new skills
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {c.skillsNeedingPracticeCount > 0 ? (
+                            <span className="inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+                              {c.skillsNeedingPracticeCount} skills &lt;70%
+                            </span>
+                          ) : (
+                            <span className="text-xs text-emerald-600 font-semibold">All mastered</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 4: LEADERBOARDS & RANKINGS */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {activeTab === "leaderboard" && (
+        <div className="space-y-4">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Filter Grade" : "ክፍል"}
+                  </label>
+                  <select
+                    value={leaderboardGrade}
+                    onChange={(e) => setLeaderboardGrade(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Grades</option>
+                    {uniqueGrades.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Filter Subject" : "የትምህርት አይነት"}
+                  </label>
+                  <select
+                    value={leaderboardSubject}
+                    onChange={(e) => setLeaderboardSubject(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Subjects</option>
+                    {uniqueSubjects.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Ranking Metric" : "የደረጃ መስፈርት"}
+                  </label>
+                  <select
+                    value={leaderboardSort}
+                    onChange={(e) => setLeaderboardSort(e.target.value as any)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="completed">Total Completed Activities</option>
+                    <option value="avgScore">Average Score Percentage</option>
+                    <option value="highScores">Mastery Count (Score ≥80%)</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Leaderboard Table */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50/90 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Rank" : "ደረጃ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Student" : "ተማሪ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Grade" : "ክፍል"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Completed Activities" : "የተጠናቀቁ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Lessons Viewed" : "የታዩ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Average Score" : "አማካይ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Mastery (≥80%)" : "ከፍተኛ (≥80%)"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loadingLeaderboard ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {t("common.loading")}
+                      </td>
+                    </tr>
+                  ) : leaderboardEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {lang === "en" ? "No leaderboard records found." : "ምንም መረጃ አልተገኘም።"}
+                      </td>
+                    </tr>
+                  ) : (
+                    leaderboardEntries.map((e) => (
+                      <tr key={e.khanStudentName} className="hover:bg-slate-50/50 transition">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            {e.rank === 1 ? (
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-slate-900 font-extrabold text-xs shadow-sm">
+                                🥇
+                              </span>
+                            ) : e.rank === 2 ? (
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-300 text-slate-900 font-extrabold text-xs shadow-sm">
+                                🥈
+                              </span>
+                            ) : e.rank === 3 ? (
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-600 text-white font-extrabold text-xs shadow-sm">
+                                🥉
+                              </span>
+                            ) : (
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-bold text-xs font-mono">
+                                #{e.rank}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div>
+                            <p className="font-bold text-slate-900">{e.officialStudentName || e.khanStudentName}</p>
+                            <span className="text-xs text-slate-400 font-mono">
+                              {e.studentCode ? `ID: ${e.studentCode}` : "Khan Name: " + e.khanStudentName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                            {e.grade} {e.section ? `· ${e.section}` : ""}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 font-mono font-extrabold text-slate-900">
+                          {e.totalActivitiesCompleted}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-slate-500">
+                          {e.totalViewed}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono font-bold">
+                          {e.averageScore !== null ? `${e.averageScore}%` : "—"}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                            {e.highScoresCount}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 5: ACTIVITY EXPLORER */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {activeTab === "explorer" && (
+        <div className="space-y-4">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Filter Import" : "ሪፖርት"}
+                  </label>
+                  <select
+                    value={selectedImportId}
+                    onChange={(e) => {
+                      setSelectedImportId(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Imports ({imports.length})</option>
+                    {imports.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.school_class_name} · {i.subject} ({i.report_date})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Grade" : "ክፍል"}
+                  </label>
+                  <select
+                    value={filterGrade}
+                    onChange={(e) => {
+                      setFilterGrade(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Grades</option>
+                    {uniqueGrades.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Subject" : "የትምህርት አይነት"}
+                  </label>
+                  <select
+                    value={filterSubject}
+                    onChange={(e) => {
+                      setFilterSubject(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Subjects</option>
+                    {uniqueSubjects.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Status" : "ሁኔታ"}
+                  </label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => {
+                      setFilterStatus(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="attempted">Attempted / Scored</option>
+                    <option value="viewed">Viewed</option>
+                    <option value="unattempted">Unattempted</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    {lang === "en" ? "Search Keyword" : "ቁልፍ ቃል"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search activity, skill, student…"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && loadRecords()}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="primary" size="sm" onClick={loadRecords} className="flex-1">
+                    <Search className="h-4 w-4 mr-1.5" />
+                    {lang === "en" ? "Search" : "ፈልግ"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportCsv({ importId: selectedImportId })}
+                    className="gap-1.5 text-xs px-2.5"
+                    title={lang === "en" ? "Export Filtered CSV" : "CSV አውርድ"}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Records Table */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50/90 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Student" : "ተማሪ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Activity / Skill" : "ተግባር"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Subject & Class" : "የትምህርት አይነት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Status" : "ሁኔታ"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Score / Ratio" : "ውጤት"}</th>
+                    <th className="px-5 py-3.5">{lang === "en" ? "Date" : "ቀን"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loadingRecords ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {t("common.loading")}
+                      </td>
+                    </tr>
+                  ) : records.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">
+                        {lang === "en" ? "No records match this filter." : "ምንም መረጃ አልተገኘም።"}
+                      </td>
+                    </tr>
+                  ) : (
+                    records.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/50 transition">
+                        <td className="px-5 py-3.5">
+                          <p className="font-bold text-slate-900">{r.official_student_name || r.khan_student_name}</p>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {r.official_student_code ? `ID: ${r.official_student_code}` : "Khan Name: " + r.khan_student_name}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="max-w-[280px] truncate" title={r.activity_skill}>
+                            <p className="font-medium text-slate-900 truncate">{r.activity_skill}</p>
+                            <p className="text-[11px] text-slate-400">Level {r.category_level}</p>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-slate-600">
+                          <p className="font-semibold">{r.subject}</p>
+                          <p className="text-slate-400">{r.school_class_name}</p>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {r.status === "attempted" ? (
+                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                              Attempted
+                            </span>
+                          ) : r.status === "viewed" ? (
+                            <span className="inline-flex rounded-full bg-royal-100 px-2.5 py-0.5 text-xs font-bold text-royal-800">
+                              Viewed
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Unattempted</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-sm">
+                          {r.score_percentage !== null ? (
+                            <span className="font-bold text-emerald-700">{r.score_percentage}%</span>
+                          ) : r.progress_current !== null && r.progress_total !== null ? (
+                            <span className="text-slate-600 font-semibold">{r.progress_current}/{r.progress_total}</span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-slate-400 font-mono">{r.report_date}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-600">
+                <span>
+                  Showing page {page} of {totalPages} ({totalCount.toLocaleString()} total items)
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="h-8 px-2 text-xs"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="h-8 px-2 text-xs"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* TAB 6: UPLOAD & INGESTION */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {activeTab === "upload" && (
+        <div className="max-w-3xl mx-auto space-y-6">
+          <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="text-center space-y-2">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-royal-50 text-royal-700">
+                  <Upload className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {lang === "en" ? "Upload Khan Academy Kids Report" : "የካን አካዳሚ ሪፖርት አስገባ"}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  {lang === "en"
+                    ? "Upload individual HTML exports, CSV activity tables, or a ZIP archive containing multiple class reports."
+                    : "የተመረጠውን የካን አካዳሚ HTML፣ CSV ወይም ZIP ፋይል ያስገቡ።"}
+                </p>
+              </div>
+
+              <div className="mt-6">
+                <label className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-8 hover:bg-royal-50/30 hover:border-royal-400 cursor-pointer transition">
+                  <FileCode className="h-8 w-8 text-royal-600 mb-2" />
+                  <span className="text-sm font-bold text-slate-700">
+                    {uploadFile ? uploadFile.name : lang === "en" ? "Select ZIP, HTML, or CSV file" : "ፋይል ይምረጡ"}
+                  </span>
+                  <span className="text-xs text-slate-400 mt-1">Up to 25MB supported</span>
+                  <input
+                    type="file"
+                    accept=".html,.htm,.zip,.csv"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {parsing && (
+                <div className="mt-4 p-4 text-center text-xs text-royal-700 bg-royal-50 rounded-xl">
+                  {lang === "en" ? "Parsing & validating report structure…" : "ፋይሉ በመመርመር ላይ ነው…"}
+                </div>
+              )}
+
+              {/* Parse Preview */}
+              {parseState && parseState.success && (
+                <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      {parseState.batchCount && parseState.batchCount > 1
+                        ? `Multi-File Archive: ${parseState.batchCount} Reports Validated`
+                        : "Report Validated Successfully"}
+                    </div>
+                  </div>
+
+                  {parseState.result && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-slate-400 block">Class:</span>
+                        <span className="font-bold text-slate-900">{parseState.result.metadata.className}</span>
+                      </div>
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-slate-400 block">Grade / Subject:</span>
+                        <span className="font-bold text-slate-900">{parseState.result.metadata.grade} · {parseState.result.metadata.subject}</span>
+                      </div>
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-slate-400 block">Report Date:</span>
+                        <span className="font-bold text-slate-900">{parseState.result.metadata.reportDate}</span>
+                      </div>
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-slate-400 block">Identified Students:</span>
+                        <span className="font-bold text-slate-900">{parseState.result.students.length} students</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => { setUploadFile(null); setParseState(null); }}>
+                      {lang === "en" ? "Cancel" : "ይቅር"}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      loading={saving}
+                      onClick={handleSaveImport}
+                      className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {lang === "en" ? "Confirm & Ingest Records" : "አስገባ"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

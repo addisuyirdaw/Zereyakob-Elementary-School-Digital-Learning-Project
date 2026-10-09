@@ -144,7 +144,11 @@ export default function DirectoryPage() {
           Date: a.date,
           "Student ID": student?.student_code ?? a.student_id,
           Student: student ? `${student.first_name} ${student.last_name}` : "",
+          Grade: a.grade || student?.grade || "",
+          Section: a.section || student?.section || "",
           Status: a.status,
+          Note: a.note || "",
+          "Correction Reason": a.correction_reason || "",
         };
       })
     );

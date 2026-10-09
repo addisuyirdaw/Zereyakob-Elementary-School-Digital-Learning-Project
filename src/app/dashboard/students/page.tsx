@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/card";
 import { PageHeader, TableHead, TableShell } from "@/components/ui/layout";
 import { StudentFormModal } from "@/components/dashboard/student-form";
 import { formatDate, initials } from "@/lib/utils";
+import { calculateAttendanceSummary } from "@/lib/attendance";
 import type { Database } from "@/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
@@ -70,7 +71,8 @@ export default function StudentsPage() {
   const rateFor = (studentId: string) => {
     const records = attendance.filter((a) => a.student_id === studentId);
     if (!records.length) return null;
-    return Math.round((records.filter((r) => r.status !== "absent").length / records.length) * 100);
+    const summary = calculateAttendanceSummary(records, 0);
+    return summary.rate;
   };
 
   const openAdd = () => {
@@ -212,6 +214,7 @@ export default function StudentsPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         student={editing}
+        existingGrades={grades}
         onSaved={() => {
           toast.success(t("stu.saved"));
           load();

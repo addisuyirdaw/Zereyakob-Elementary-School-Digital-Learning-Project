@@ -36,6 +36,7 @@ export type Database = {
           gender: 'male' | 'female' | 'other';
           grade: string;
           section: string;
+          status: 'active' | 'transferred' | 'graduated' | 'inactive';
           guardian_name: string;
           guardian_phone: string;
           address: string;
@@ -56,6 +57,7 @@ export type Database = {
           gender: string;
           grade: string;
           section: string;
+          status: 'active' | 'transferred' | 'graduated' | 'inactive';
           guardian_name: string;
           guardian_phone: string;
           address: string;
@@ -75,8 +77,13 @@ export type Database = {
           student_id: string;
           date: string;
           status: 'present' | 'absent' | 'excused' | 'late';
+          grade: string;
+          section: string;
           note: string;
+          correction_reason: string;
           recorded_by: string | null;
+          corrected_by: string | null;
+          corrected_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -84,9 +91,34 @@ export type Database = {
           id: string;
           student_id: string;
           date: string;
-          status: string;
+          status: 'present' | 'absent' | 'excused' | 'late';
+          grade: string;
+          section: string;
           note: string;
+          correction_reason: string;
           recorded_by: string | null;
+          corrected_by: string | null;
+          corrected_at: string | null;
+          [key: string]: unknown;
+        }>;
+        Update: Partial<Record<string, unknown>>;
+      };
+      school_calendar: {
+        Row: {
+          date: string;
+          is_school_day: boolean;
+          term: string;
+          holiday_name: string;
+          note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<{
+          date: string;
+          is_school_day: boolean;
+          term: string;
+          holiday_name: string;
+          note: string;
           [key: string]: unknown;
         }>;
         Update: Partial<Record<string, unknown>>;
