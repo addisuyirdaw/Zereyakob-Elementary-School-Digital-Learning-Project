@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   FileText,
   Filter,
+  History,
   Search,
   Users,
 } from "lucide-react";
@@ -42,6 +43,13 @@ import {
   type SchoolCalendarDay,
 } from "@/lib/attendance";
 import type { Database } from "@/types/database";
+import {
+  formatGradeDisplay,
+  getSectionsForGrade,
+  getStandardGradeOptions,
+  isStudentInGrade,
+} from "@/lib/grades";
+import { StudentAttendanceHistoryModal } from "@/components/dashboard/student-attendance-history-modal";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -55,6 +63,7 @@ export default function ReportsPage() {
   const [calendarDays, setCalendarDays] = useState<SchoolCalendarDay[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyStudent, setHistoryStudent] = useState<Student | null>(null);
 
   // Filters
   const [preset, setPreset] = useState<DateRangePreset>("last_30_days");
@@ -100,15 +109,12 @@ export default function ReportsPage() {
     setTo(tDate);
   };
 
-  const grades = useMemo(() => {
-    return Array.from(new Set(students.map((s) => s.grade)))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const gradeOptions = useMemo(() => {
+    return getStandardGradeOptions(students);
   }, [students]);
 
   const sections = useMemo(() => {
-    const list = selectedGrade === "all" ? students : students.filter((s) => s.grade === selectedGrade);
-    return Array.from(new Set(list.map((s) => s.section))).filter(Boolean).sort();
+    return getSectionsForGrade(students, selectedGrade);
   }, [students, selectedGrade]);
 
   const profileMap = useMemo(() => {
@@ -124,8 +130,8 @@ export default function ReportsPage() {
     const needle = searchQuery.trim().toLowerCase();
     return students.filter((s) => {
       if (s.status && s.status !== "active") return false;
-      const matchGrade = selectedGrade === "all" || s.grade === selectedGrade;
-      const matchSection = selectedSection === "all" || s.section === selectedSection;
+      const matchGrade = isStudentInGrade(s.grade, selectedGrade);
+      const matchSection = selectedSection === "all" || (s.section || "") === selectedSection;
       const matchQuery =
         !needle ||
         `${s.first_name} ${s.last_name}`.toLowerCase().includes(needle) ||
@@ -348,17 +354,18 @@ export default function ReportsPage() {
               <select
                 value={selectedGrade}
                 onChange={(e) => {
-                  setSelectedGrade(e.target.value);
-                  setSelectedSection("all");
+                  const nextG = e.target.value;
+                  setSelectedGrade(nextG);
+                  const nextSecs = getSectionsForGrade(students, nextG);
+                  if (selectedSection !== "all" && !nextSecs.includes(selectedSection)) {
+                    setSelectedSection("all");
+                  }
                 }}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-royal-500 focus:outline-none focus:ring-2 focus:ring-royal-500/20"
               >
-                <option value="all">{t("att.allClasses")}</option>
-                {grades.map((g) => (
-                  <option key={g} value={g}>
-                    {g.toLowerCase().startsWith("kg") || g.toLowerCase().startsWith("grade") || g.toLowerCase().startsWith("pre")
-                      ? g
-                      : `${t("stu.grade")} ${g}`}
+                {gradeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value === "all" ? t("att.allGrades") : opt.label}
                   </option>
                 ))}
               </select>
@@ -563,16 +570,27 @@ export default function ReportsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-right">
-                        <Link href={`/dashboard/students/${row.student.id}`}>
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 px-2 text-xs text-slate-500 hover:text-royal-700"
-                            title={t("common.view")}
+                            onClick={() => setHistoryStudent(row.student)}
+                            className="h-8 px-2 text-xs text-royal-700 hover:text-royal-900"
+                            title={t("att.history")}
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <History className="h-3.5 w-3.5" />
                           </Button>
-                        </Link>
+                          <Link href={`/dashboard/students/${row.student.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-xs text-slate-500 hover:text-royal-700"
+                              title={t("common.view")}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -586,6 +604,12 @@ export default function ReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <StudentAttendanceHistoryModal
+        student={historyStudent}
+        isOpen={!!historyStudent}
+        onClose={() => setHistoryStudent(null)}
+      />
     </div>
   );
 }

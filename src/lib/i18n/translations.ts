@@ -335,6 +335,10 @@ export const translations: Record<string, Entry> = {
   "att.student": { en: "Student", am: "ተማሪ" },
   "att.class": { en: "Class / Section", am: "ክፍል / ሴክሽን" },
   "att.allClasses": { en: "All Classes", am: "ሁሉም ክፍሎች" },
+  "att.autoSaved": { en: "Auto-saved", am: "በራስ-ሰር ተቀምጧል" },
+  "att.autoSaving": { en: "Auto-saving…", am: "በማስቀመጥ ላይ…" },
+  "att.autoSaveReady": { en: "Auto-save active", am: "ራስ-ሰር ማስቀመጥ ነቅቷል" },
+  "att.autoSaveError": { en: "Auto-save failed", am: "ራስ-ሰር ማስቀመጥ አልተሳካም" },
   "att.allSections": { en: "All Sections", am: "ሁሉም ሴክሽኖች" },
   "att.status": { en: "Status", am: "ሁኔታ" },
   "att.unmarked": { en: "Unmarked", am: "ያልተመዘገበ" },
@@ -385,6 +389,11 @@ export const translations: Record<string, Entry> = {
   "att.preset.custom": { en: "Custom Range", am: "የተመረጠ የቀን ገደብ" },
   "att.exportSummary": { en: "Export Summary CSV", am: "የማጠቃለያ CSV አውርድ" },
   "att.exportLogs": { en: "Export Daily Logs CSV", am: "የቀን መዝገቦች CSV አውርድ" },
+  "att.allGrades": { en: "All Classes", am: "ሁሉም ክፍሎች" },
+  "att.daily": { en: "Daily Attendance", am: "የዕለት መገኘት" },
+  "att.insights": { en: "Attendance Insights", am: "የመገኘት ትንታኔ እና ማስጠንቀቂያ" },
+  "att.enrolled": { en: "Enrolled Students", am: "የተመዘገቡ ተማሪዎች" },
+  "att.viewHistory": { en: "View History", am: "ታሪክ ይመልከቱ" },
 
   // ── Directory ─────────────────────────────────────────────────────────────
   "dir.title": { en: "Directory", am: "ማውጫ" },
