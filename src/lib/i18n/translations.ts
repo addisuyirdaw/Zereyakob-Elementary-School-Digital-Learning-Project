@@ -339,6 +339,8 @@ export const translations: Record<string, Entry> = {
   "att.autoSaving": { en: "Auto-saving…", am: "በማስቀመጥ ላይ…" },
   "att.autoSaveReady": { en: "Auto-save active", am: "ራስ-ሰር ማስቀመጥ ነቅቷል" },
   "att.autoSaveError": { en: "Auto-save failed", am: "ራስ-ሰር ማስቀመጥ አልተሳካም" },
+  "att.autoSaveSuccess": { en: "All changes auto-saved", am: "ሁሉም ለውጦች በራስ-ሰር ተቀምጠዋል" },
+  "att.retry": { en: "Retry", am: "እንደገና ሞክር" },
   "att.allSections": { en: "All Sections", am: "ሁሉም ሴክሽኖች" },
   "att.status": { en: "Status", am: "ሁኔታ" },
   "att.unmarked": { en: "Unmarked", am: "ያልተመዘገበ" },

@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertCircle,
-  AlertTriangle,
   CalendarCheck2,
   Check,
   CheckCircle2,
@@ -14,8 +13,8 @@ import {
   Filter,
   HelpCircle,
   History,
+  Loader2,
   RotateCcw,
-  Save,
   Search,
   Sparkles,
   TrendingDown,
@@ -71,13 +70,6 @@ const activeStyles: Record<Status, string> = {
   excused: "border-royal-700 bg-royal-700 text-white shadow-md shadow-royal-700/30",
 };
 
-interface ConfirmSwitchState {
-  title: string;
-  message: string;
-  onProceed: () => void;
-  onDiscard: () => void;
-}
-
 export default function AttendancePage() {
   const { t, lang } = useLang();
   const { user } = useDashboard();
@@ -94,9 +86,10 @@ export default function AttendancePage() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [existing, setExisting] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastAutoSavedTime, setLastAutoSavedTime] = useState<string>("");
+  const [savingStudentIds, setSavingStudentIds] = useState<Set<string>>(new Set());
+  const inFlightCountRef = useRef<number>(0);
 
   // Note Modal state
   const [noteModalStudent, setNoteModalStudent] = useState<Student | null>(null);
@@ -104,9 +97,6 @@ export default function AttendancePage() {
 
   // Student Attendance History Modal
   const [historyStudent, setHistoryStudent] = useState<Student | null>(null);
-
-  // Unsaved changes confirmation dialog
-  const [confirmSwitch, setConfirmSwitch] = useState<ConfirmSwitchState | null>(null);
 
   // Longitudinal records for Insights tab
   const [insightsPreset, setInsightsPreset] = useState<string>("last_30_days");
@@ -204,29 +194,6 @@ export default function AttendancePage() {
     loadInsightsRecords(insightsFrom, newTo);
   };
 
-  // Check if a student has unsaved modifications
-  const isStudentModified = useCallback(
-    (studentId: string) => {
-      const currentStatus = selections[studentId];
-      const currentNote = notes[studentId] || "";
-      const savedRecord = existing.find((e) => e.student_id === studentId);
-
-      if (!savedRecord) {
-        return !!currentStatus || !!currentNote;
-      }
-      return savedRecord.status !== currentStatus || (savedRecord.note || "") !== currentNote;
-    },
-    [selections, notes, existing]
-  );
-
-  const hasUnsavedChanges = useMemo(() => {
-    return students.some((s) => isStudentModified(s.id));
-  }, [students, isStudentModified]);
-
-  const unsavedCount = useMemo(() => {
-    return students.filter((s) => isStudentModified(s.id)).length;
-  }, [students, isStudentModified]);
-
   // Standardized grade options & sections
   const gradeOptions = useMemo(() => {
     return getStandardGradeOptions(students);
@@ -236,80 +203,31 @@ export default function AttendancePage() {
     return getSectionsForGrade(students, selectedGrade);
   }, [students, selectedGrade]);
 
-  // Handle Date changes with unsaved changes protection
+  // Handle Date changes — seamless real-time switch without manual save prompts
   const onDateChange = (nextDate: string) => {
     if (nextDate === date) return;
-    if (hasUnsavedChanges) {
-      setConfirmSwitch({
-        title: lang === "en" ? "Unsaved Attendance Changes" : "ያልተቀመጡ የመገኘት ለውጦች",
-        message:
-          lang === "en"
-            ? `You have unsaved changes on ${date}. Would you like to save before switching dates?`
-            : `በ ${date} ላይ ያልተቀመጡ ለውጦች አሉ። ቀኑን ከመቀየርዎ በፊት ማስቀመጥ ይፈልጋሉ?`,
-        onProceed: async () => {
-          await save();
-          setDate(nextDate);
-          loadDay(nextDate);
-          setStatusFilter("all");
-          setConfirmSwitch(null);
-        },
-        onDiscard: () => {
-          setDate(nextDate);
-          loadDay(nextDate);
-          setStatusFilter("all");
-          setConfirmSwitch(null);
-        },
-      });
-      return;
-    }
-
     setDate(nextDate);
     loadDay(nextDate);
     setStatusFilter("all");
   };
 
-  // Handle Grade change with unsaved changes protection and auto section reset
+  // Handle Grade change — auto section reset
   const onGradeChange = (nextGrade: string) => {
     if (nextGrade === selectedGrade) return;
-
-    const executeGradeChange = () => {
-      setSelectedGrade(nextGrade);
-      const nextAvailableSections = getSectionsForGrade(students, nextGrade);
-      if (selectedSection !== "all" && !nextAvailableSections.includes(selectedSection)) {
-        setSelectedSection("all");
-      }
-      setStatusFilter("all");
-    };
-
-    if (hasUnsavedChanges) {
-      setConfirmSwitch({
-        title: lang === "en" ? "Unsaved Attendance Changes" : "ያልተቀመጡ የመገኘት ለውጦች",
-        message:
-          lang === "en"
-            ? `You have unsaved changes for ${date}. Save before changing class view?`
-            : `ያልተቀመጡ ለውጦች አሉ። ክፍል ከመቀየርዎ በፊት ማስቀመጥ ይፈልጋሉ?`,
-        onProceed: async () => {
-          await save();
-          executeGradeChange();
-          setConfirmSwitch(null);
-        },
-        onDiscard: () => {
-          executeGradeChange();
-          loadDay(date);
-          setConfirmSwitch(null);
-        },
-      });
-      return;
+    setSelectedGrade(nextGrade);
+    const nextAvailableSections = getSectionsForGrade(students, nextGrade);
+    if (selectedSection !== "all" && !nextAvailableSections.includes(selectedSection)) {
+      setSelectedSection("all");
     }
-
-    executeGradeChange();
+    setStatusFilter("all");
   };
 
+  // Real-time seamless auto-save on status click (present, absent, late, excused, unmark)
   const setStatus = async (studentId: string, status: Status) => {
     const isClearing = selections[studentId] === status;
     const nextStatus: Status | null = isClearing ? null : status;
 
-    // Optimistic UI update
+    // 1. Instant optimistic UI update
     setSelections((prev) => {
       if (isClearing) {
         const next = { ...prev };
@@ -319,11 +237,16 @@ export default function AttendancePage() {
       return { ...prev, [studentId]: status };
     });
 
-    // Real-time Auto-save
+    // 2. Track in-flight saving state
+    setSavingStudentIds((prev) => new Set(prev).add(studentId));
+    inFlightCountRef.current += 1;
     setAutoSaveState("saving");
+
     try {
       const supabase = createClient();
       if (!supabase) throw new Error("No database client");
+
+      const student = students.find((s) => s.id === studentId);
 
       if (nextStatus) {
         const note = notes[studentId]?.trim() || "";
@@ -333,19 +256,28 @@ export default function AttendancePage() {
           status: nextStatus,
           note,
           recorded_by: user?.id ?? null,
+          grade: student?.grade || "",
+          section: student?.section || "",
         };
+
         const { error } = await supabase
           .from("attendance")
           .upsert(payload, { onConflict: "student_id,date" });
 
         if (error) throw error;
 
-        // Sync local saved cache
+        // Sync local saved cache immediately
         setExisting((prev) => {
           const idx = prev.findIndex((e) => e.student_id === studentId);
           if (idx >= 0) {
             const copy = [...prev];
-            copy[idx] = { ...copy[idx], status: nextStatus, note };
+            copy[idx] = {
+              ...copy[idx],
+              status: nextStatus,
+              note,
+              grade: payload.grade,
+              section: payload.section,
+            };
             return copy;
           }
           return [...prev, { id: "", created_at: "", updated_at: "", ...payload } as Attendance];
@@ -362,16 +294,29 @@ export default function AttendancePage() {
 
         setExisting((prev) => prev.filter((e) => e.student_id !== studentId));
       }
-
-      setAutoSaveState("saved");
-      const now = new Date();
-      setLastAutoSavedTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-      );
     } catch (err) {
       console.error("Auto-save attendance error:", err);
       setAutoSaveState("error");
-      toast.error(lang === "en" ? "Auto-save failed. Click Save to retry." : "ራስ-ሰር ማስቀመጥ አልተሳካም።");
+      toast.error(
+        lang === "en"
+          ? "Failed to auto-save. Check connection or tap Retry."
+          : "ራስ-ሰር ማስቀመጥ አልተሳካም። ግንኙነትዎን ይፈትሹ ወይም እንደገና ይሞክሩ።"
+      );
+    } finally {
+      setSavingStudentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(studentId);
+        return next;
+      });
+
+      inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+      if (inFlightCountRef.current === 0) {
+        setAutoSaveState("saved");
+        const now = new Date();
+        setLastAutoSavedTime(
+          now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        );
+      }
     }
   };
 
@@ -459,7 +404,11 @@ export default function AttendancePage() {
     }
     setSelections(next);
 
+    const idsToMark = new Set(displayedStudents.map((s) => s.id));
+    setSavingStudentIds((prev) => new Set([...prev, ...idsToMark]));
+    inFlightCountRef.current += 1;
     setAutoSaveState("saving");
+
     try {
       const supabase = createClient();
       if (!supabase) throw new Error("No database client");
@@ -470,6 +419,8 @@ export default function AttendancePage() {
         status: "present" as Status,
         note: notes[student.id]?.trim() || "",
         recorded_by: user?.id ?? null,
+        grade: student.grade || "",
+        section: student.section || "",
       }));
 
       const { error } = await supabase
@@ -479,32 +430,40 @@ export default function AttendancePage() {
       if (error) throw error;
 
       setExisting((prev) => {
-        const studentIds = new Set(displayedStudents.map((s) => s.id));
-        const filtered = prev.filter((e) => !studentIds.has(e.student_id));
+        const filtered = prev.filter((e) => !idsToMark.has(e.student_id));
         const newRecords = rowsToUpsert.map(
           (r) => ({ id: "", created_at: "", updated_at: "", ...r } as Attendance)
         );
         return [...filtered, ...newRecords];
       });
 
-      setAutoSaveState("saved");
-      const now = new Date();
-      setLastAutoSavedTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-      );
       toast.success(
         lang === "en"
           ? `Marked all present & auto-saved (${displayedStudents.length})`
-          : `ሁሉም ተገኝተዋል ተብለው ተመዝግበዋል (${displayedStudents.length})`
+          : `ሁሉም ተገኝተዋል ተብለው በራስ-ሰር ተመዝግበዋል (${displayedStudents.length})`
       );
     } catch (err) {
       console.error("Auto-save all error:", err);
       setAutoSaveState("error");
       toast.error(lang === "en" ? "Auto-save failed." : "ራስ-ሰር ማስቀመጥ አልተሳካም።");
+    } finally {
+      setSavingStudentIds((prev) => {
+        const updated = new Set(prev);
+        for (const id of idsToMark) updated.delete(id);
+        return updated;
+      });
+      inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+      if (inFlightCountRef.current === 0) {
+        setAutoSaveState("saved");
+        const now = new Date();
+        setLastAutoSavedTime(
+          now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        );
+      }
     }
   };
 
-  // Note Modal handlers
+  // Note Modal handlers with seamless auto-save
   const openNoteModal = (student: Student) => {
     setNoteModalStudent(student);
     setTempNote(notes[student.id] || "");
@@ -519,17 +478,22 @@ export default function AttendancePage() {
 
     const currentStatus = selections[studentId];
     if (currentStatus) {
+      setSavingStudentIds((prev) => new Set(prev).add(studentId));
+      inFlightCountRef.current += 1;
       setAutoSaveState("saving");
       try {
         const supabase = createClient();
         if (!supabase) throw new Error("No database client");
 
+        const student = students.find((s) => s.id === studentId);
         const payload = {
           student_id: studentId,
           date,
           status: currentStatus,
           note: trimmedNote,
           recorded_by: user?.id ?? null,
+          grade: student?.grade || "",
+          section: student?.section || "",
         };
         const { error } = await supabase
           .from("attendance")
@@ -547,29 +511,36 @@ export default function AttendancePage() {
           return [...prev, { id: "", created_at: "", updated_at: "", ...payload } as Attendance];
         });
 
-        setAutoSaveState("saved");
-        const now = new Date();
-        setLastAutoSavedTime(
-          now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-        );
-        toast.success(lang === "en" ? "Note saved & synced" : "ማስታወሻ ተቀምጧል");
+        toast.success(lang === "en" ? "Note auto-saved" : "ማስታወሻ ተቀምጧል");
       } catch (err) {
         console.error("Auto-save note error:", err);
         setAutoSaveState("error");
+      } finally {
+        setSavingStudentIds((prev) => {
+          const updated = new Set(prev);
+          updated.delete(studentId);
+          return updated;
+        });
+        inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
+        if (inFlightCountRef.current === 0) {
+          setAutoSaveState("saved");
+          const now = new Date();
+          setLastAutoSavedTime(
+            now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          );
+        }
       }
     } else {
       toast.success(lang === "en" ? "Note updated" : "ማስታወሻ ተዘምኗል");
     }
   };
 
-  // Save changes to database (server-side authorization and unique constraint safety)
-  const save = async () => {
+  // Full re-sync / retry helper if network error occurs
+  const syncAll = async () => {
     if (scopedStudents.length === 0) return;
-    setSaving(true);
     setAutoSaveState("saving");
     const supabase = createClient();
     if (!supabase) {
-      setSaving(false);
       setAutoSaveState("error");
       toast.error(t("common.error"));
       return;
@@ -578,7 +549,7 @@ export default function AttendancePage() {
     const rowsToUpsert = [];
     for (const student of scopedStudents) {
       const status = selections[student.id];
-      if (!status) continue; // Unmarked students are never fabricated
+      if (!status) continue;
 
       rowsToUpsert.push({
         student_id: student.id,
@@ -586,10 +557,11 @@ export default function AttendancePage() {
         status,
         note: notes[student.id]?.trim() || "",
         recorded_by: user?.id ?? null,
+        grade: student.grade || "",
+        section: student.section || "",
       });
     }
 
-    // Clean up any unmarked students previously stored for this date
     const scopedIds = new Set(scopedStudents.map((s) => s.id));
     const previouslyRecordedIds = existing
       .filter((e) => scopedIds.has(e.student_id))
@@ -612,26 +584,20 @@ export default function AttendancePage() {
         .select();
 
       if (error) {
-        setSaving(false);
         setAutoSaveState("error");
-        if (String(error.code) === "23505") {
-          toast.error(t("att.duplicate"));
-        } else {
-          toast.error(error.message || t("common.error"));
-          console.error("Attendance save error:", error);
-        }
+        toast.error(error.message || t("common.error"));
+        console.error("Attendance sync error:", error);
         return;
       }
     }
 
-    setSaving(false);
     setAutoSaveState("saved");
     const now = new Date();
     setLastAutoSavedTime(
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
     );
 
-    toast.success(t("att.saved"));
+    toast.success(t("att.autoSaveSuccess"));
     await loadDay(date);
     await loadInsightsRecords(insightsFrom, insightsTo);
   };
@@ -658,20 +624,17 @@ export default function AttendancePage() {
             {/* Real-time Auto-save status indicator */}
             <div
               className={cn(
-                "flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm border",
-                autoSaveState === "saving" && "border-amber-300 bg-amber-50 text-amber-800",
+                "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shadow-sm border",
+                autoSaveState === "saving" && "border-royal-300 bg-royal-50/80 text-royal-700",
                 autoSaveState === "saved" && "border-emerald-300 bg-emerald-50 text-emerald-800",
                 autoSaveState === "error" && "border-red-300 bg-red-50 text-red-800",
                 autoSaveState === "idle" && "border-slate-200 bg-slate-50 text-slate-600"
               )}
-              title="Attendance auto-saves continuously as you click"
+              title="Attendance automatically saves continuously as you mark present, absent, or late"
             >
               {autoSaveState === "saving" && (
                 <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                  </span>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-royal-600 shrink-0" />
                   <span>{t("att.autoSaving")}</span>
                 </>
               )}
@@ -680,34 +643,44 @@ export default function AttendancePage() {
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                   <span>
                     {t("att.autoSaved")}
-                    {lastAutoSavedTime ? ` (${lastAutoSavedTime})` : ""}
+                    {lastAutoSavedTime ? ` · ${lastAutoSavedTime}` : ""}
                   </span>
                 </>
               )}
               {autoSaveState === "error" && (
-                <>
+                <div className="flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
                   <span>{t("att.autoSaveError")}</span>
-                </>
+                  <button
+                    type="button"
+                    onClick={syncAll}
+                    className="ml-1 underline font-black hover:text-red-950"
+                  >
+                    {t("att.retry")}
+                  </button>
+                </div>
               )}
               {autoSaveState === "idle" && (
                 <>
-                  <Check className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <Sparkles className="h-3.5 w-3.5 text-royal-500 shrink-0" />
                   <span>{t("att.autoSaveReady")}</span>
                 </>
               )}
             </div>
 
-            {/* Save Attendance Button */}
+            {/* Quick Refresh button */}
             <Button
-              variant="primary"
-              loading={saving}
-              onClick={save}
-              disabled={scopedStudents.length === 0}
-              className="gap-2 shadow-lg shadow-royal-700/20 font-bold"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                loadDay(date);
+                loadInsightsRecords(insightsFrom, insightsTo);
+              }}
+              title="Refresh attendance records"
+              className="gap-1.5 text-xs text-slate-700 hover:text-slate-900 border-slate-200"
             >
-              <Save className="h-4 w-4" aria-hidden />
-              {t("att.saveAll")}
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{lang === "en" ? "Refresh" : "አድስ"}</span>
             </Button>
           </div>
         }
@@ -956,30 +929,28 @@ export default function AttendancePage() {
           <Card className="border-slate-200/80 shadow-sm">
             <CardContent className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2.5">
-                {/* Global Unsaved Changes Warning */}
-                {hasUnsavedChanges ? (
-                  <Badge tone="amber" className="flex items-center gap-1.5 py-1 px-2.5 font-bold animate-pulse">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>
-                      {t("att.savedState.unsaved")} ({unsavedCount} {lang === "en" ? "changes" : "ለውጦች"})
-                    </span>
+                {/* Auto-save & Completion Status */}
+                {autoSaveState === "saving" ? (
+                  <Badge tone="royal" className="flex items-center gap-1.5 py-1 px-2.5 font-bold">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-royal-600" />
+                    <span>{t("att.autoSaving")}</span>
                   </Badge>
                 ) : summary.isFullyRecorded ? (
-                  <Badge tone="green" className="flex items-center gap-1.5 py-1 px-2.5">
+                  <Badge tone="green" className="flex items-center gap-1.5 py-1 px-2.5 font-bold">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     <span>
                       {t("att.savedState.saved")} ({summary.recordedCount}/{summary.total})
                     </span>
                   </Badge>
                 ) : summary.isPartiallyRecorded ? (
-                  <Badge tone="royal" className="flex items-center gap-1.5 py-1 px-2.5">
+                  <Badge tone="royal" className="flex items-center gap-1.5 py-1 px-2.5 font-bold">
                     <AlertCircle className="h-3.5 w-3.5" />
                     <span>
                       {t("att.savedState.partial")} ({summary.recordedCount}/{summary.total})
                     </span>
                   </Badge>
                 ) : (
-                  <Badge className="flex items-center gap-1.5 py-1 px-2.5 text-slate-500 bg-slate-100">
+                  <Badge className="flex items-center gap-1.5 py-1 px-2.5 text-slate-500 bg-slate-100 font-bold">
                     <HelpCircle className="h-3.5 w-3.5" />
                     <span>{t("att.savedState.none")}</span>
                   </Badge>
@@ -1050,8 +1021,10 @@ export default function AttendancePage() {
                   {displayedStudents.map((student) => {
                     const currentStatus = selections[student.id];
                     const studentNote = notes[student.id];
-                    const isModified = isStudentModified(student.id);
-                    const isSavedInDb = existing.some((e) => e.student_id === student.id);
+                    const isSavingThis = savingStudentIds.has(student.id);
+                    const isSavedInDb = existing.some(
+                      (e) => e.student_id === student.id && e.status === currentStatus
+                    );
 
                     return (
                       <tr key={student.id} className="hover:bg-royal-50/20 transition">
@@ -1066,13 +1039,12 @@ export default function AttendancePage() {
                                 <p className="font-bold text-slate-900">
                                   {student.first_name} {student.last_name}
                                 </p>
-                                {isModified ? (
-                                  <span
-                                    className="h-2 w-2 rounded-full bg-amber-500"
-                                    title="Unsaved changes"
-                                  />
-                                ) : isSavedInDb ? (
-                                  <span title="Saved in database">
+                                {isSavingThis ? (
+                                  <span title={lang === "en" ? "Auto-saving…" : "በራስ-ሰር በማስቀመጥ ላይ…"}>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-royal-600" />
+                                  </span>
+                                ) : isSavedInDb && currentStatus ? (
+                                  <span title={lang === "en" ? "Auto-saved in database" : "በመረጃ ቋት ተቀምጧል"}>
                                     <Check className="h-3.5 w-3.5 text-emerald-600" />
                                   </span>
                                 ) : null}
@@ -1281,52 +1253,6 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Unsaved Changes Confirmation Modal */}
-      {confirmSwitch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
-            onClick={() => setConfirmSwitch(null)}
-          />
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                <AlertTriangle className="h-5 w-5" />
-              </span>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900">
-                  {confirmSwitch.title}
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                  {confirmSwitch.message}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2.5">
-              <Button variant="ghost" size="sm" onClick={() => setConfirmSwitch(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={confirmSwitch.onDiscard}
-                className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
-              >
-                Discard
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={confirmSwitch.onProceed}
-                className="font-bold"
-              >
-                Save & Continue
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
