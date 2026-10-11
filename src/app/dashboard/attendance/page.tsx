@@ -256,8 +256,6 @@ export default function AttendancePage() {
           status: nextStatus,
           note,
           recorded_by: user?.id ?? null,
-          grade: student?.grade || "",
-          section: student?.section || "",
         };
 
         const { error } = await supabase
@@ -275,8 +273,6 @@ export default function AttendancePage() {
               ...copy[idx],
               status: nextStatus,
               note,
-              grade: payload.grade,
-              section: payload.section,
             };
             return copy;
           }
@@ -294,13 +290,19 @@ export default function AttendancePage() {
 
         setExisting((prev) => prev.filter((e) => e.student_id !== studentId));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Auto-save attendance error:", err);
       setAutoSaveState("error");
+      const errMessage =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "";
       toast.error(
-        lang === "en"
-          ? "Failed to auto-save. Check connection or tap Retry."
-          : "ራስ-ሰር ማስቀመጥ አልተሳካም። ግንኙነትዎን ይፈትሹ ወይም እንደገና ይሞክሩ።"
+        errMessage
+          ? `${lang === "en" ? "Auto-save failed" : "ራስ-ሰር ማስቀመጥ አልተሳካም"}: ${errMessage}`
+          : (lang === "en"
+              ? "Failed to auto-save. Check connection or tap Retry."
+              : "ራስ-ሰር ማስቀመጥ አልተሳካም። ግንኙነትዎን ይፈትሹ ወይም እንደገና ይሞክሩ።")
       );
     } finally {
       setSavingStudentIds((prev) => {
@@ -419,8 +421,6 @@ export default function AttendancePage() {
         status: "present" as Status,
         note: notes[student.id]?.trim() || "",
         recorded_by: user?.id ?? null,
-        grade: student.grade || "",
-        section: student.section || "",
       }));
 
       const { error } = await supabase
@@ -485,15 +485,12 @@ export default function AttendancePage() {
         const supabase = createClient();
         if (!supabase) throw new Error("No database client");
 
-        const student = students.find((s) => s.id === studentId);
         const payload = {
           student_id: studentId,
           date,
           status: currentStatus,
           note: trimmedNote,
           recorded_by: user?.id ?? null,
-          grade: student?.grade || "",
-          section: student?.section || "",
         };
         const { error } = await supabase
           .from("attendance")
@@ -557,8 +554,6 @@ export default function AttendancePage() {
         status,
         note: notes[student.id]?.trim() || "",
         recorded_by: user?.id ?? null,
-        grade: student.grade || "",
-        section: student.section || "",
       });
     }
 
